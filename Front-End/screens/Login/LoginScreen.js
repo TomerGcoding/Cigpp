@@ -1,91 +1,53 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  ScrollView,
-  Pressable,
-  Link,
-} from "react-native";
-import React, { useState } from "react";
+import React from "react";
+import { View, Text, TouchableOpacity, Image, TextInput } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import styles from "./LoginStyle";
 
-export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
+const LoginScreen = ({ navigation }) => {
   return (
-    <ScrollView>
+    <View style={styles.container}>
+      <StatusBar style="dark" />
       <View>
-        <TextInput
-          style={styles.input}
-          onChangeText={setEmail}
-          value={email}
-          placeholder="Email"
+        <Image
+          source={require("../../assets/cig_splash(2).png")}
+          style={styles.logo}
+          resizeMode="contain"
         />
-        <TextInput
-          style={styles.input}
-          onChangeText={setPassword}
-          value={password}
-          placeholder="Password"
-        />
-        <Text style={styles.regularText}>Forgot your password?</Text>
-        <Pressable
+      </View>
+
+      <View style={styles.loginFormContainer}>
+        <Text style={styles.loginHeader}>Login</Text>
+        <TextInput placeholder="Email" style={styles.input}></TextInput>
+        <TextInput placeholder="Password" style={styles.input}></TextInput>
+      </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => navigation.navigate("Tabs")}
         >
           <Text style={styles.buttonText}>Login</Text>
-        </Pressable>
-        <View style={styles.noAccountFlow}>
-          <Text style={styles.regularText}>Don't have an account?</Text>
-          <Pressable>
-            <Text
-              style={styles.registerText}
-              onPress={() => navigation.navigate("Register")}
-            >
-              Register
-            </Text>
-          </Pressable>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.textButtonsContainer}>
+        <TouchableOpacity>
+          <Text style={styles.regularText}>Sign Up Now</Text>
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Text style={styles.regularText}>Forgot Password?</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.footer}>
+        <Text style={styles.regularText}>Other Login Methods</Text>
+        <View style={styles.googleIconContainer}>
+          <TouchableOpacity>
+            <Image
+              source={require("../../assets/icons/google.png")}
+              style={styles.googleIcon}
+            ></Image>
+          </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  input: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-  },
-  button: {
-    width: "100%",
-    elevation: 8,
-    backgroundColor: "#009688",
-    shadowColor: "#000",
-    alignItems: "center",
-    padding: 10,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "black",
-  },
-  regularText: {
-    textAlign: "center",
-    margin: 5,
-  },
-  registerText: {
-    color: "blue",
-    textDecorationLine: "underline",
-    margin: 5,
-  },
-  noAccountFlow: {
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-});
+};
+export default LoginScreen;
