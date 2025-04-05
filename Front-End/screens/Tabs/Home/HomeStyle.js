@@ -6,5 +6,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F6F0",
     justifyContent: "center",
     alignItems: "center",
+    marginTop: "auto",
   },
 });

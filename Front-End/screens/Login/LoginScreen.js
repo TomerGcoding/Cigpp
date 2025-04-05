@@ -2,10 +2,11 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image, TextInput } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./LoginStyle";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const LoginScreen = ({ navigation }) => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       <View>
         <Image
@@ -29,7 +30,7 @@ const LoginScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
       <View style={styles.textButtonsContainer}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Register")}>
           <Text style={styles.regularText}>Sign Up Now</Text>
         </TouchableOpacity>
         <TouchableOpacity>
@@ -47,7 +48,7 @@ const LoginScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 export default LoginScreen;
