@@ -5,9 +5,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8F6F0",
   },
-  header: {
-    margin: 20,
-  },
+  header: { margin: 20 },
   title: {
     fontSize: 30,
     fontWeight: "bold",
@@ -15,6 +13,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: "#777",
+    marginBottom: 10,
   },
   registerFormContainer: {
     margin: 20,
