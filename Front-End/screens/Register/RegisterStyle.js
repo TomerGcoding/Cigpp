@@ -44,14 +44,11 @@ const styles = StyleSheet.create({
     padding: 12,
     justifyContent: "center",
   },
-  buttonContainer: {
-    alignItems: "center",
-  },
   button: {
     backgroundColor: "#50C878",
     paddingVertical: 15,
     borderRadius: 30,
-    width: "90%",
+    width: "100%",
     alignItems: "center",
   },
   buttonText: {

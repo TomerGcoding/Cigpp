@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ImageBackground,
-} from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./RegisterStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,29 +13,28 @@ const RegisterScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [username, setUsername] = useState("");
-  const [currentConsumption, setCurrentConsumption] = useState(0);
-  const [targetConsumption, setTargetConsumption] = useState(0);
-  const [isFormFilled, setIsFormFilled] = useState(false);
+  const [currentConsumption, setCurrentConsumption] = useState("");
+  const [targetConsumption, setTargetConsumption] = useState("");
+  const [isForm1Filled, setIsForm1Filled] = useState(false);
+  const [isForm2Filled, setIsForm2Filled] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
   useEffect(() => {
-    const formFilled =
+    const firstStepFilled =
       email.trim() !== "" &&
       password.trim() !== "" &&
       confirmPassword.trim() !== "" &&
-      username.trim() !== "" &&
-      currentConsumption !== 0 &&
-      targetConsumption !== 0;
-    setIsFormFilled(formFilled);
-  }, [
-    email,
-    password,
-    confirmPassword,
-    username,
-    currentConsumption,
-    targetConsumption,
-  ]);
+      username.trim() !== "";
+    setIsForm1Filled(firstStepFilled);
+  }, [email, password, confirmPassword, username]);
 
-  const validateRegisterForm = () => {
+  useEffect(() => {
+    const secondStepFilled =
+      currentConsumption.trim() !== "" && targetConsumption.trim() !== "";
+    setIsForm2Filled(secondStepFilled);
+  }, [currentConsumption, targetConsumption]);
+
+  const validateStep1 = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert("Error", "Please enter a valid email address");
@@ -62,26 +54,59 @@ const RegisterScreen = ({ navigation }) => {
       return false;
     }
 
-    if (parseInt(currentConsumption) <= parseInt(targetConsumption)) {
+    // if (parseInt(currentConsumption) <= parseInt(targetConsumption)) {
+    //   Alert.alert(
+    //     "Error",
+    //     "Target Consumption must be lower then current consumption"
+    //   );
+    //   return false;
+    // }
+    return true;
+  };
+
+  const validateStep2 = () => {
+    const dailyCigs = parseInt(currentConsumption);
+    const targetCigs = parseInt(targetConsumption);
+
+    if (isNaN(dailyCigs) || dailyCigs <= 0) {
+      Alert.alert("Error", "Please enter a valid number for daily average");
+      return false;
+    }
+
+    if (isNaN(targetCigs) || targetCigs < 0) {
+      Alert.alert("Error", "Please enter a valid number for daily average");
+      return false;
+    }
+
+    if (targetCigs > dailyCigs) {
       Alert.alert(
         "Error",
-        "Target Consumption must be lower then current consumption"
+        "Daily target should be less than or equal to your current amount"
       );
       return false;
     }
     return true;
   };
 
+  const nextStep = () => {
+    if (currentStep === 1 && validateStep1()) {
+      setCurrentStep(2);
+    }
+  };
+  const prevStep = () => {
+    if (currentStep === 2) {
+      setCurrentStep(1);
+    }
+  };
+
   const handleRegister = async () => {
     try {
-      if (validateRegisterForm()) {
+      if (validateStep2()) {
         const userCredentials = await createUserWithEmailAndPassword(
           auth,
           email,
           password
         );
-        const user = userCredentials.user;
-        await updateProfile(user, { displayName: `${username}` });
         Alert.alert("Success", "Account created successfully");
         navigation.navigate("Tabs");
       } else {
@@ -106,101 +131,118 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
+      <TouchableOpacity
+        onPress={() => (currentStep === 1 ? navigation.goBack() : prevStep())}
+      >
         <Ionicons name="arrow-back" size={24} color="#333" />
       </TouchableOpacity>
       <StatusBar style="dark" />
       <View style={styles.header}>
         <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Step 1: Your Login Information</Text>
+        <Text style={styles.subtitle}>
+          {currentStep === 1
+            ? "Step 1: Your Login Information"
+            : "Step 2: Your Smoking Habits"}
+        </Text>
       </View>
-      <View style={styles.registerFormContainer}>
-        <View style={styles.field}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            placeholder="Enter your email"
-            placeholderTextColor={"#777"}
-            style={styles.input}
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          ></TextInput>
-        </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordContainer}>
+      {currentStep === 1 ? (
+        <View style={styles.registerFormContainer}>
+          <View style={styles.field}>
+            <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.passwordInput}
-              placeholder="Enter your password"
+              placeholder="Enter your email"
               placeholderTextColor={"#777"}
-              secureTextEntry={!isPasswordVisible}
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity
-              onPress={togglePasswordVisibility}
-              style={styles.visibilityIcon}
-            >
-              <Ionicons
-                name={isPasswordVisible ? "eye-off-outline" : "eye-outline"}
-                size={24}
-                color="#777"
-              />
-            </TouchableOpacity>
+              style={styles.input}
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            ></TextInput>
           </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Enter your password"
+                placeholderTextColor={"#777"}
+                secureTextEntry={!isPasswordVisible}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity
+                onPress={togglePasswordVisibility}
+                style={styles.visibilityIcon}
+              >
+                <Ionicons
+                  name={isPasswordVisible ? "eye-off-outline" : "eye-outline"}
+                  size={24}
+                  color="#777"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>Confirm Password</Text>
+            <TextInput
+              placeholder="Confirm your password"
+              placeholderTextColor={"#777"}
+              style={styles.input}
+              secureTextEntry={!isPasswordVisible}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            ></TextInput>
+          </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>Username</Text>
+            <TextInput
+              placeholder="Choose your username"
+              placeholderTextColor={"#777"}
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+            ></TextInput>
+          </View>
+          <TouchableOpacity
+            style={[styles.button, { opacity: !isForm1Filled ? 0.5 : 1 }]}
+            disabled={!isForm1Filled}
+            onPress={nextStep}
+          >
+            <Text style={styles.buttonText}>Next</Text>
+          </TouchableOpacity>
         </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>Confirm Password</Text>
-          <TextInput
-            placeholder="Confirm your password"
-            placeholderTextColor={"#777"}
-            style={styles.input}
-            secureTextEntry={!isPasswordVisible}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          ></TextInput>
+      ) : (
+        <View style={styles.registerFormContainer}>
+          <View style={styles.field}>
+            <Text style={styles.label}>Current Daily Smoking Habits</Text>
+            <TextInput
+              placeholder="# of cigarettes smoked per day "
+              placeholderTextColor={"#777"}
+              keyboardType="numeric"
+              style={styles.input}
+              value={currentConsumption}
+              onChangeText={setCurrentConsumption}
+            ></TextInput>
+          </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>Target Daily Smoking Habits </Text>
+            <TextInput
+              placeholder="# of cigarettes you want to reduce to "
+              placeholderTextColor={"#777"}
+              keyboardType="numeric"
+              style={styles.input}
+              value={targetConsumption}
+              onChangeText={setTargetConsumption}
+            ></TextInput>
+          </View>
+          <TouchableOpacity
+            style={[styles.button, { opacity: !isForm2Filled ? 0.5 : 1 }]}
+            disabled={!isForm2Filled}
+            onPress={handleRegister}
+          >
+            <Text style={styles.buttonText}>Register</Text>
+          </TouchableOpacity>
         </View>
-        <Text style={styles.subtitle}>Step 2: Your Personal Info</Text>
-        <View style={styles.field}>
-          <Text style={styles.label}>Username</Text>
-          <TextInput
-            placeholder="Choose you username"
-            placeholderTextColor={"#777"}
-            style={styles.input}
-            value={username}
-            onChangeText={setUsername}
-          ></TextInput>
-        </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>Current Daily Smoking Habits</Text>
-          <TextInput
-            placeholder="# of cigarettes smoked per day "
-            placeholderTextColor={"#777"}
-            style={styles.input}
-            value={currentConsumption}
-            onChangeText={setCurrentConsumption}
-          ></TextInput>
-        </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>Target Daily Smoking Habits </Text>
-          <TextInput
-            placeholder="# of cigarettes you want to reduce to "
-            placeholderTextColor={"#777"}
-            style={styles.input}
-            value={targetConsumption}
-            onChangeText={setTargetConsumption}
-          ></TextInput>
-        </View>
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, { opacity: !isFormFilled ? 0.5 : 1 }]}
-          disabled={!isFormFilled}
-          onPress={handleRegister}
-        >
-          <Text style={styles.buttonText}>Register</Text>
-        </TouchableOpacity>
-      </View>
+      )}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>
         <TouchableOpacity onPress={() => navigation.navigate("Login")}>
