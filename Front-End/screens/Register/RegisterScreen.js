@@ -1,15 +1,52 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./RegisterStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "react-native-vector-icons";
+import { auth } from "../../config/firebase/firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const handleRegister = async () => {
+    if (email === "" || password === "" || confirmPassword === "") {
+      Alert.alert("Error", "Please fill in all the requested fields");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert(
+        "Error",
+        "Password confirmation different then password entered"
+      );
+      return;
+    }
+
+    try {
+      const userCredentials = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      Alert.alert("Success", "Account created successfully");
+      navigation.navigate("Tabs");
+    } catch (error) {
+      if (error.code === "auth/email-already-in-use") {
+        Alert.alert("Error", "The email address is already in use.");
+      } else if (error.code === "auth/invalid-email") {
+        Alert.alert("Error", "The email address is not valid.");
+      } else if (error.code === "auth/weak-password") {
+        Alert.alert("Error", "The password is too weak.");
+      } else {
+        Alert.alert("Error", error.message);
+      }
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -73,10 +110,7 @@ const RegisterScreen = ({ navigation }) => {
         </View>
       </View>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("Tabs")}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleRegister}>
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
       </View>

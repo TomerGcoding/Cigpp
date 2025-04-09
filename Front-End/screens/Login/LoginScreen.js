@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Image, TextInput } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./LoginStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const LoginScreen = ({ navigation }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
