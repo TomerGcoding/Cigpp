@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import styles from "./RegisterStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "react-native-vector-icons";
-import { auth } from "../../config/firebase/firebaseConfig";
+import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 
 const RegisterScreen = ({ navigation }) => {
@@ -18,6 +18,7 @@ const RegisterScreen = ({ navigation }) => {
   const [isForm1Filled, setIsForm1Filled] = useState(false);
   const [isForm2Filled, setIsForm2Filled] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const auth = FIREBASE_AUTH;
 
   useEffect(() => {
     const firstStepFilled =

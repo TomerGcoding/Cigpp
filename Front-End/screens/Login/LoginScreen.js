@@ -6,17 +6,20 @@ import {
   Image,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./LoginStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { auth } from "../../config/firebase/firebaseConfig";
+import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isCredentialsFilled, setIsCredentialsFilled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const auth = FIREBASE_AUTH;
 
   useEffect(() => {
     const credentialsFilled = email.trim() !== "" && password.trim() !== "";
@@ -24,6 +27,7 @@ const LoginScreen = ({ navigation }) => {
   }, [email, password]);
 
   const handleLogin = () => {
+    setIsLoading(true);
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         const user = userCredential.user;
@@ -36,7 +40,12 @@ const LoginScreen = ({ navigation }) => {
           Alert.alert("Error", "Invalid credentials. Please try agian!");
         } else if (errorCode === "auth/invalid-email") {
           Alert.alert("Error", "Please enter a valid email address");
+        } else {
+          Alert.alert("Error", errorMessage);
         }
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
@@ -72,11 +81,18 @@ const LoginScreen = ({ navigation }) => {
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.button, { opacity: !isCredentialsFilled ? 0.5 : 1 }]}
-          disabled={!isCredentialsFilled}
+          style={[
+            styles.button,
+            { opacity: !isCredentialsFilled || isLoading ? 0.5 : 1 },
+          ]}
+          disabled={!isCredentialsFilled || isLoading}
           onPress={handleLogin}
         >
-          <Text style={styles.buttonText}>Login</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
         </TouchableOpacity>
       </View>
       <View style={styles.textButtonsContainer}>
