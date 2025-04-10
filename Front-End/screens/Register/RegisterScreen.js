@@ -5,7 +5,7 @@ import styles from "./RegisterStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "react-native-vector-icons";
 import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -101,6 +101,8 @@ const RegisterScreen = ({ navigation }) => {
           email,
           password
         );
+        const user = userCredentials.user;
+        await updateProfile(user, { displayName: `${username}` });
         Alert.alert("Success", "Account created successfully");
         navigation.navigate("Tabs");
       } else {
