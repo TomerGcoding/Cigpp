@@ -5,7 +5,7 @@ import styles from "./RegisterStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "react-native-vector-icons";
 import { auth } from "../../config/firebase/firebaseConfig";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -54,13 +54,6 @@ const RegisterScreen = ({ navigation }) => {
       return false;
     }
 
-    // if (parseInt(currentConsumption) <= parseInt(targetConsumption)) {
-    //   Alert.alert(
-    //     "Error",
-    //     "Target Consumption must be lower then current consumption"
-    //   );
-    //   return false;
-    // }
     return true;
   };
 
