@@ -1,5 +1,5 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import HomeScreen from "./Home/HomeScreen";
+import SummaryNavigator from "./Summary/SummaryNavigator";
 
 const Tab = createBottomTabNavigator();
 const TabsNavigator = () => {
@@ -9,8 +9,8 @@ const TabsNavigator = () => {
         headerShown: false,
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen}></Tab.Screen>
-      <Tab.Screen name="Bechki" component={HomeScreen}></Tab.Screen>
+      <Tab.Screen name="Summary" component={SummaryNavigator}></Tab.Screen>
+      <Tab.Screen name="Bechki" component={SummaryNavigator}></Tab.Screen>
     </Tab.Navigator>
   );
 };
