@@ -32,8 +32,6 @@ const styles = StyleSheet.create({
   },
   passwordContainer: {
     flexDirection: "row",
-    backgroundColor: "transparent",
-    borderBottomWidth: 0.5,
   },
   passwordInput: {
     flex: 1,

@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./RegisterStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "react-native-vector-icons";
 import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import CustomInput from "../../components/CustomInput";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [username, setUsername] = useState("");
   const [currentConsumption, setCurrentConsumption] = useState("");
   const [targetConsumption, setTargetConsumption] = useState("");
@@ -121,17 +120,8 @@ const RegisterScreen = ({ navigation }) => {
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setIsPasswordVisible(!isPasswordVisible);
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        onPress={() => (currentStep === 1 ? navigation.goBack() : prevStep())}
-      >
-        <Ionicons name="arrow-back" size={24} color="#333" />
-      </TouchableOpacity>
       <StatusBar style="dark" />
       <View style={styles.header}>
         <Text style={styles.title}>Create Account</Text>
@@ -143,61 +133,35 @@ const RegisterScreen = ({ navigation }) => {
       </View>
       {currentStep === 1 ? (
         <View style={styles.registerFormContainer}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              placeholder="Enter your email"
-              placeholderTextColor={"#777"}
-              style={styles.input}
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            ></TextInput>
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="Enter your password"
-                placeholderTextColor={"#777"}
-                secureTextEntry={!isPasswordVisible}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity
-                onPress={togglePasswordVisibility}
-                style={styles.visibilityIcon}
-              >
-                <Ionicons
-                  name={isPasswordVisible ? "eye-off-outline" : "eye-outline"}
-                  size={24}
-                  color="#777"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Confirm Password</Text>
-            <TextInput
-              placeholder="Confirm your password"
-              placeholderTextColor={"#777"}
-              style={styles.input}
-              secureTextEntry={!isPasswordVisible}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            ></TextInput>
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Username</Text>
-            <TextInput
-              placeholder="Choose your username"
-              placeholderTextColor={"#777"}
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-            ></TextInput>
-          </View>
+          <CustomInput
+            label={"Email"}
+            placeholder={"Enter your email"}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+          <CustomInput
+            label={"Password"}
+            placeholder={"Enter your password"}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={true}
+            isPasswordInput={true}
+          />
+          <CustomInput
+            label={"Confirm Password"}
+            placeholder={"Confirm your password"}
+            value={confirmPassword}
+            secureTextEntry={true}
+            isPasswordInput={true}
+            onChangeText={setConfirmPassword}
+          />
+          <CustomInput
+            label={"Username"}
+            placeholder={"Choose your username"}
+            value={username}
+            onChangeText={setUsername}
+          />
           <TouchableOpacity
             style={[styles.button, { opacity: !isForm1Filled ? 0.5 : 1 }]}
             disabled={!isForm1Filled}
@@ -208,28 +172,20 @@ const RegisterScreen = ({ navigation }) => {
         </View>
       ) : (
         <View style={styles.registerFormContainer}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Current Daily Smoking Habits</Text>
-            <TextInput
-              placeholder="# of cigarettes smoked per day "
-              placeholderTextColor={"#777"}
-              keyboardType="numeric"
-              style={styles.input}
-              value={currentConsumption}
-              onChangeText={setCurrentConsumption}
-            ></TextInput>
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Target Daily Smoking Habits </Text>
-            <TextInput
-              placeholder="# of cigarettes you want to reduce to "
-              placeholderTextColor={"#777"}
-              keyboardType="numeric"
-              style={styles.input}
-              value={targetConsumption}
-              onChangeText={setTargetConsumption}
-            ></TextInput>
-          </View>
+          <CustomInput
+            label={"Current Daily Smoking Habits"}
+            placeholder={"# of cigarettes smoked per day"}
+            value={currentConsumption}
+            onChangeText={setCurrentConsumption}
+            keyboardType="numeric"
+          />
+          <CustomInput
+            label={"Target Daily Smoking Habits"}
+            placeholder={"# of cigarettes you want to reduce to"}
+            value={targetConsumption}
+            onChangeText={setTargetConsumption}
+            keyboardType="numeric"
+          />
           <TouchableOpacity
             style={[styles.button, { opacity: !isForm2Filled ? 0.5 : 1 }]}
             disabled={!isForm2Filled}
