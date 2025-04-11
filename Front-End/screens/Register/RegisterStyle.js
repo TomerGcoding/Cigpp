@@ -18,30 +18,6 @@ const styles = StyleSheet.create({
   registerFormContainer: {
     margin: 20,
   },
-  field: {
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: "transparent",
-    borderBottomWidth: 0.5,
-    fontSize: 16,
-  },
-  label: {
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  passwordContainer: {
-    flexDirection: "row",
-  },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  visibilityIcon: {
-    padding: 12,
-    justifyContent: "center",
-  },
   button: {
     backgroundColor: "#50C878",
     paddingVertical: 15,

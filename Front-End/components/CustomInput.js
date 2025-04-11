@@ -9,7 +9,7 @@ import { Ionicons } from "react-native-vector-icons";
 import React, { useState } from "react";
 
 const CustomInput = ({
-  label,
+  label = "",
   placeholder,
   value,
   onChangeText,
