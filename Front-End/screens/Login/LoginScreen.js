@@ -26,7 +26,6 @@ const LoginScreen = ({ navigation }) => {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         const user = userCredential.user;
-        navigation.navigate("Tabs");
       })
       .catch((error) => {
         const errorCode = error.code;

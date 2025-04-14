@@ -105,7 +105,6 @@ const RegisterScreen = ({ navigation }) => {
         const user = userCredentials.user;
         await updateProfile(user, { displayName: `${username}` });
         Alert.alert("Success", "Account created successfully");
-        navigation.navigate("Tabs");
       } else {
         return;
       }

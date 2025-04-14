@@ -23,18 +23,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     alignItems: "center",
   },
-  button: {
-    backgroundColor: "#50C878",
-    paddingVertical: 15,
-    borderRadius: 30,
-    width: "90%",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
   textButtonsContainer: {
     margin: 20,
     flexDirection: "row",

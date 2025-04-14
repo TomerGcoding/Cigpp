@@ -3,28 +3,20 @@ import { View, Text } from "react-native";
 import styles from "./HomeStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FIREBASE_AUTH } from "../../../config/firebase/firebaseConfig";
-import { Button } from "@react-navigation/elements";
+import CustomButton from "../../../components/CustomButton";
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = () => {
   const auth = FIREBASE_AUTH;
 
   const handleSignOut = () => {
-    auth.signOut();
+    auth.signOut().catch((error) => {
+      console.error("Error signing out: ", error);
+    });
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Button onPress={handleSignOut}>Sign Out</Button>
-      <Text
-        onPress={() => {
-          console.log(auth.currentUser.displayName);
-        }}
-      >
-        {"Hello " + auth.currentUser.displayName}
-      </Text>
-      <Button onPress={() => navigation.navigate("Login")}>
-        Back to login
-      </Button>
+      <CustomButton title={"Sign Out"} onPress={handleSignOut}></CustomButton>
     </SafeAreaView>
   );
 };

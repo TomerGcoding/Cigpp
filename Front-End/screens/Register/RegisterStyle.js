@@ -18,18 +18,6 @@ const styles = StyleSheet.create({
   registerFormContainer: {
     margin: 20,
   },
-  button: {
-    backgroundColor: "#50C878",
-    paddingVertical: 15,
-    borderRadius: 30,
-    width: "100%",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -39,11 +27,6 @@ const styles = StyleSheet.create({
   footerText: {
     color: "#777",
     fontSize: 14,
-  },
-  footerLink: {
-    color: "#50C878",
-    fontSize: 14,
-    fontWeight: "600",
   },
 });
 
