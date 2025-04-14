@@ -6,6 +6,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import CustomInput from "../../components/CustomInput";
+import CustomButton from "../../components/CustomButton";
+import CustomClickableText from "../../components/CustomClickableText";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -162,13 +164,12 @@ const RegisterScreen = ({ navigation }) => {
             value={username}
             onChangeText={setUsername}
           />
-          <TouchableOpacity
-            style={[styles.button, { opacity: !isForm1Filled ? 0.5 : 1 }]}
-            disabled={!isForm1Filled}
+          <CustomButton
+            title={"Next"}
             onPress={nextStep}
-          >
-            <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
+            disabled={!isForm1Filled}
+            style={{ width: "100%" }}
+          />
         </View>
       ) : (
         <View style={styles.registerFormContainer}>
@@ -186,20 +187,20 @@ const RegisterScreen = ({ navigation }) => {
             onChangeText={setTargetConsumption}
             keyboardType="numeric"
           />
-          <TouchableOpacity
-            style={[styles.button, { opacity: !isForm2Filled ? 0.5 : 1 }]}
-            disabled={!isForm2Filled}
+          <CustomButton
+            title={"Register"}
             onPress={handleRegister}
-          >
-            <Text style={styles.buttonText}>Register</Text>
-          </TouchableOpacity>
+            disabled={!isForm2Filled}
+            style={{ width: "100%" }}
+          />
         </View>
       )}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.footerLink}>Login</Text>
-        </TouchableOpacity>
+        <CustomClickableText
+          title={"Login"}
+          onPress={() => navigation.navigate("Login")}
+        ></CustomClickableText>
       </View>
     </SafeAreaView>
   );

@@ -1,18 +1,13 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TouchableOpacity, Image, Alert } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./LoginStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import CustomInput from "../../components/CustomInput";
+import CustomButton from "../../components/CustomButton";
+import CustomClickableText from "../../components/CustomClickableText";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -62,46 +57,43 @@ const LoginScreen = ({ navigation }) => {
 
       <View style={styles.loginFormContainer}>
         <Text style={styles.loginHeader}>Login</Text>
-        <TextInput
+        <CustomInput
+          placeholder={"Email"}
+          keyboardType={"email-address"}
           value={email}
           onChangeText={setEmail}
-          placeholderTextColor={"#777"}
-          placeholder="Email"
-          keyboardType="email-address"
-          style={styles.input}
-        ></TextInput>
-        <TextInput
-          value={password}
-          placeholder="Password"
-          style={styles.input}
-          onChangeText={setPassword}
+        ></CustomInput>
+        <CustomInput
+          placeholder={"Password"}
+          isPasswordInput={true}
           secureTextEntry={true}
-          placeholderTextColor={"#777"}
-        ></TextInput>
+          value={password}
+          onChangeText={setPassword}
+        ></CustomInput>
       </View>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            { opacity: !isCredentialsFilled || isLoading ? 0.5 : 1 },
-          ]}
-          disabled={!isCredentialsFilled || isLoading}
+        <CustomButton
+          title={"Login"}
           onPress={handleLogin}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
-        </TouchableOpacity>
+          isLoading={isLoading}
+          disabled={!isCredentialsFilled || isLoading}
+        ></CustomButton>
       </View>
+
       <View style={styles.textButtonsContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-          <Text style={styles.regularText}>Sign Up Now</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Text style={styles.regularText}>Forgot Password?</Text>
-        </TouchableOpacity>
+        <CustomClickableText
+          title={"Sign Up Now"}
+          onPress={() => navigation.navigate("Register")}
+        ></CustomClickableText>
+        <CustomClickableText
+          title={"Forgot Password?"}
+          onPress={() =>
+            Alert.alert(
+              "Email Sent!",
+              "Go to your regirstered email inbox to reset your password"
+            )
+          }
+        ></CustomClickableText>
       </View>
       <View style={styles.footer}>
         <Text style={styles.regularText}>Other Login Methods</Text>

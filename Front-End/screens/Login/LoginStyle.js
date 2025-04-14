@@ -20,13 +20,6 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
   },
-  input: {
-    backgroundColor: "transparent",
-    borderBottomWidth: 0.5,
-    fontSize: 16,
-    marginBottom: 10,
-    marginTop: 10,
-  },
   buttonContainer: {
     alignItems: "center",
   },
