@@ -1,10 +1,16 @@
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
+import { FONT } from "../constants/theme";
 
-const CustomClickableText = ({ title, onPress, style = {} }) => {
+const CustomClickableText = ({
+  title,
+  onPress,
+  style = {},
+  textStyle = {},
+}) => {
   return (
     <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
-      <Text style={styles.buttonText}>{title}</Text>
+      <Text style={[styles.buttonText, textStyle]}>{title}</Text>
     </TouchableOpacity>
   );
 };
@@ -17,7 +23,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#50C878",
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONT.bold,
   },
 });
 

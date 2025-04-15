@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { Ionicons } from "react-native-vector-icons";
 import React, { useState } from "react";
+import { FONT } from "../constants/theme";
 
 const CustomInput = ({
   label = "",
@@ -27,7 +28,7 @@ const CustomInput = ({
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <View style={isPasswordInput ? styles.passwordContainer : null}>
+      <View style={isPasswordInput ? [styles.passwordContainer, style] : null}>
         <TextInput
           placeholder={placeholder}
           placeholderTextColor={placeholderTextColor}
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: FONT.bold,
     marginBottom: 8,
   },
   input: {
@@ -73,6 +74,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    fontFamily: FONT.bold,
   },
   passwordContainer: {
     flexDirection: "row",
@@ -86,6 +88,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     fontSize: 16,
+    fontFamily: FONT.bold,
   },
   visibilityIcon: {
     marginLeft: 8,

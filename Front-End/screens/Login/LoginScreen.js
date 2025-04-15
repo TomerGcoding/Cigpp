@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, Image, Alert } from "react-native";
+import { View, Text, Alert, ImageBackground } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./LoginStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +11,7 @@ import {
 import CustomInput from "../../components/CustomInput";
 import CustomButton from "../../components/CustomButton";
 import CustomClickableText from "../../components/CustomClickableText";
+import { FONT } from "../../constants/theme";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -18,6 +19,7 @@ const LoginScreen = ({ navigation }) => {
   const [isCredentialsFilled, setIsCredentialsFilled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const auth = FIREBASE_AUTH;
+
   useEffect(() => {
     const credentialsFilled = email.trim() !== "" && password.trim() !== "";
     setIsCredentialsFilled(credentialsFilled);
@@ -66,52 +68,73 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-      <View>
-        <Image
-          source={require("../../assets/cig_splash(2).png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
+    <ImageBackground
+      source={require("../../assets/backgrounds/LoginBackground2.0.png")}
+      resizeMode="cover"
+      style={{ flex: 1, opacity: 0.8 }}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
 
-      <View style={styles.loginFormContainer}>
-        <Text style={styles.loginHeader}>Login</Text>
-        <CustomInput
-          placeholder={"Email"}
-          keyboardType={"email-address"}
-          value={email}
-          onChangeText={setEmail}
-        ></CustomInput>
-        <CustomInput
-          placeholder={"Password"}
-          isPasswordInput={true}
-          secureTextEntry={true}
-          value={password}
-          onChangeText={setPassword}
-        ></CustomInput>
-      </View>
-      <View style={styles.buttonContainer}>
-        <CustomButton
-          title={"Login"}
-          onPress={handleLogin}
-          isLoading={isLoading}
-          disabled={!isCredentialsFilled || isLoading}
-        ></CustomButton>
-      </View>
+        <View style={styles.loginFormContainer}>
+          <Text style={[styles.loginHeader, { fontFamily: FONT.regular }]}>
+            Login
+          </Text>
+          <CustomInput
+            placeholder={"Email"}
+            placeholderTextColor="#5c3700"
+            keyboardType={"email-address"}
+            value={email}
+            onChangeText={setEmail}
+            style={{
+              borderColor: "#5c3721",
+              color: "#5c3721",
+            }}
+          ></CustomInput>
+          <CustomInput
+            placeholder={"Password"}
+            placeholderTextColor="#5c3700"
+            isPasswordInput={true}
+            secureTextEntry={true}
+            value={password}
+            onChangeText={setPassword}
+            style={{
+              borderColor: "#5c3721",
+              color: "#5c3721",
+            }}
+          ></CustomInput>
+          <View style={styles.buttonContainer}>
+            <CustomButton
+              title={"Login"}
+              onPress={handleLogin}
+              isLoading={isLoading}
+              disabled={!isCredentialsFilled || isLoading}
+              style={{
+                backgroundColor: !isCredentialsFilled
+                  ? "transparent"
+                  : "#5c3721",
+                borderColor: "#5c3721",
+                borderWidth: 2,
+              }}
+              textStyle={{ color: !isCredentialsFilled ? "#5c3721" : "#fff" }}
+            ></CustomButton>
+          </View>
 
-      <View style={styles.textButtonsContainer}>
-        <CustomClickableText
-          title={"Sign Up Now"}
-          onPress={() => navigation.navigate("Register")}
-        ></CustomClickableText>
-        <CustomClickableText
-          title={"Forgot Password?"}
-          onPress={handleForgotPassword}
-        ></CustomClickableText>
-      </View>
-    </SafeAreaView>
+          <View style={styles.textButtonsContainer}>
+            <CustomClickableText
+              title={"Sign Up Now"}
+              onPress={() => navigation.navigate("Register")}
+              textStyle={{ color: "#5c3721" }}
+            ></CustomClickableText>
+            <CustomClickableText
+              title={"Forgot Password?"}
+              onPress={handleForgotPassword}
+              textStyle={{ color: "#5c3721" }}
+            ></CustomClickableText>
+          </View>
+        </View>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 export default LoginScreen;

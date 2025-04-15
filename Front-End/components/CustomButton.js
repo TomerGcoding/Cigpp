@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { FONT } from "../constants/theme";
 
 const CustomButton = ({
   title,
@@ -12,6 +13,7 @@ const CustomButton = ({
   isLoading = false,
   disabled = false,
   style = {},
+  textStyle = {},
 }) => {
   return (
     <TouchableOpacity
@@ -24,9 +26,9 @@ const CustomButton = ({
       disabled={disabled || isLoading}
     >
       {isLoading ? (
-        <ActivityIndicator color="#fff" size="small" />
+        <ActivityIndicator color="#ffff" size="small" />
       ) : (
-        <Text style={styles.buttonText}>{title}</Text>
+        <Text style={[styles.buttonText, textStyle]}>{title}</Text>
       )}
     </TouchableOpacity>
   );
@@ -44,7 +46,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: FONT.bold,
   },
 });
 

@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { FONT } from "../../constants/theme";
 
 const styles = StyleSheet.create({
   container: {
@@ -8,12 +9,13 @@ const styles = StyleSheet.create({
   header: { margin: 20 },
   title: {
     fontSize: 30,
-    fontWeight: "bold",
+    fontFamily: FONT.bold,
   },
   subtitle: {
     fontSize: 16,
     color: "#777",
     marginBottom: 10,
+    fontFamily: FONT.bold,
   },
   registerFormContainer: {
     margin: 20,
