@@ -8,7 +8,6 @@ const styles = StyleSheet.create({
   loginFormContainer: {
     margin: 20,
     padding: 10,
-    borderRadius: 20,
   },
   loginHeader: {
     alignItems: "center",

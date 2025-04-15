@@ -87,8 +87,8 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     flex: 1,
-    padding: 12,
     fontSize: 16,
+    padding: 12,
     fontFamily: FONT.bold,
   },
   visibilityIcon: {

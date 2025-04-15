@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import TabsNavigator from "./screens/Tabs/TabsNavigator";
-import MainStackNavigator from "./screens/MainStack/MainStackNavigator";
+import AuthStack from "./screens/Stacks/AuthStack";
 import { onAuthStateChanged } from "firebase/auth";
 import { FIREBASE_AUTH } from "./config/firebase/firebaseConfig";
 import * as SplashScreen from "expo-splash-screen";
@@ -40,7 +40,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      {user ? <TabsNavigator /> : <MainStackNavigator />}
+      {user ? <TabsNavigator /> : <AuthStack />}
     </NavigationContainer>
   );
 }
