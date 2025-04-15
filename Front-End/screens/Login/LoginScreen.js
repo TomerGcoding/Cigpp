@@ -4,7 +4,10 @@ import { StatusBar } from "expo-status-bar";
 import styles from "./LoginStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import CustomInput from "../../components/CustomInput";
 import CustomButton from "../../components/CustomButton";
 import CustomClickableText from "../../components/CustomClickableText";
@@ -15,7 +18,6 @@ const LoginScreen = ({ navigation }) => {
   const [isCredentialsFilled, setIsCredentialsFilled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const auth = FIREBASE_AUTH;
-
   useEffect(() => {
     const credentialsFilled = email.trim() !== "" && password.trim() !== "";
     setIsCredentialsFilled(credentialsFilled);
@@ -41,6 +43,26 @@ const LoginScreen = ({ navigation }) => {
       .finally(() => {
         setIsLoading(false);
       });
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert(
+        "Enter Email",
+        "Please enter your email to reset your password."
+      );
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert(
+        "Password Reset",
+        "If an account with that email exists, a password reset email has been sent."
+      );
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
   };
 
   return (
@@ -86,24 +108,8 @@ const LoginScreen = ({ navigation }) => {
         ></CustomClickableText>
         <CustomClickableText
           title={"Forgot Password?"}
-          onPress={() =>
-            Alert.alert(
-              "Email Sent!",
-              "Go to your regirstered email inbox to reset your password"
-            )
-          }
+          onPress={handleForgotPassword}
         ></CustomClickableText>
-      </View>
-      <View style={styles.footer}>
-        <Text style={styles.regularText}>Other Login Methods</Text>
-        <View style={styles.googleIconContainer}>
-          <TouchableOpacity>
-            <Image
-              source={require("../../assets/icons/google.png")}
-              style={styles.googleIcon}
-            ></Image>
-          </TouchableOpacity>
-        </View>
       </View>
     </SafeAreaView>
   );
