@@ -26,9 +26,14 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
   },
-  touchableTiles: {
-    flex: 1,
+  touchableBoxContainer: {
+    flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
+  },
+  boxContainer: {
+    marginTop: 20,
+    flex: 1,
     alignItems: "center",
   },
 });

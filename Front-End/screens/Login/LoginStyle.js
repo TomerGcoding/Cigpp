@@ -62,6 +62,15 @@ const styles = StyleSheet.create({
   googleIcon: {
     resizeMode: "center",
   },
+  socialButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+  socialButton: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
 });
 
 export default styles;
