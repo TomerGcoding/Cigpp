@@ -75,6 +75,13 @@ const LoginScreen = ({ navigation }) => {
     >
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
+        <View style={{ alignItems: "center", top: -80 }}>
+          <Text
+            style={{ fontFamily: FONT.italic, color: "#5c3721", fontSize: 54 }}
+          >
+            Cig++
+          </Text>
+        </View>
 
         <View style={styles.loginFormContainer}>
           <Text style={[styles.loginHeader, { fontFamily: FONT.regular }]}>
@@ -82,7 +89,6 @@ const LoginScreen = ({ navigation }) => {
           </Text>
           <CustomInput
             placeholder={"Email"}
-            placeholderTextColor="#5c3700"
             keyboardType={"email-address"}
             value={email}
             onChangeText={setEmail}
@@ -93,7 +99,6 @@ const LoginScreen = ({ navigation }) => {
           ></CustomInput>
           <CustomInput
             placeholder={"Password"}
-            placeholderTextColor="#5c3700"
             isPasswordInput={true}
             secureTextEntry={true}
             value={password}

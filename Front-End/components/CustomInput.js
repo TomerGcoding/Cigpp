@@ -16,7 +16,7 @@ const CustomInput = ({
   onChangeText,
   secureTextEntry = false,
   keyboardType = "default",
-  placeholderTextColor = "#777",
+  placeholderTextColor = "#5c3700",
   isPasswordInput = false,
   style = {},
 }) => {
@@ -27,7 +27,7 @@ const CustomInput = ({
   };
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, style]}>{label}</Text>
       <View style={isPasswordInput ? [styles.passwordContainer, style] : null}>
         <TextInput
           placeholder={placeholder}
@@ -83,6 +83,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     paddingRight: 12,
+    paddingLeft: 4,
   },
   passwordInput: {
     flex: 1,
