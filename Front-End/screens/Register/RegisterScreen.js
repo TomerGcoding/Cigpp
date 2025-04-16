@@ -8,6 +8,7 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import CustomInput from "../../components/CustomInput";
 import CustomButton from "../../components/CustomButton";
 import CustomClickableText from "../../components/CustomClickableText";
+import { COLOR } from "../../constants/theme";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -140,7 +141,7 @@ const RegisterScreen = ({ navigation }) => {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
-            style={{ color: "#5c3721", borderColor: "#5c3721" }}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
           />
           <CustomInput
             label={"Password"}
@@ -149,7 +150,7 @@ const RegisterScreen = ({ navigation }) => {
             onChangeText={setPassword}
             secureTextEntry={true}
             isPasswordInput={true}
-            style={{ color: "#5c3721", borderColor: "#5c3721" }}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
           />
           <CustomInput
             label={"Confirm Password"}
@@ -158,27 +159,27 @@ const RegisterScreen = ({ navigation }) => {
             secureTextEntry={true}
             isPasswordInput={true}
             onChangeText={setConfirmPassword}
-            style={{ color: "#5c3721", borderColor: "#5c3721" }}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
           />
           <CustomInput
             label={"Username"}
             placeholder={"Choose your username"}
             value={username}
             onChangeText={setUsername}
-            style={{ color: "#5c3721", borderColor: "#5c3721" }}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
           />
           <CustomButton
             title={"Next"}
             onPress={nextStep}
             disabled={!isForm1Filled}
             style={{
-              backgroundColor: !isForm1Filled ? "transparent" : "#5c3721",
-              borderColor: "#5c3721",
+              backgroundColor: !isForm1Filled ? "transparent" : COLOR.primary,
+              borderColor: COLOR.primary,
               borderWidth: 2,
               width: "100%",
               marginTop: 10,
             }}
-            textStyle={{ color: !isForm1Filled ? "#5c3721" : "#fff" }}
+            textStyle={{ color: !isForm1Filled ? COLOR.primary : "#fff" }}
           />
         </View>
       ) : (
@@ -189,7 +190,7 @@ const RegisterScreen = ({ navigation }) => {
             value={currentConsumption}
             onChangeText={setCurrentConsumption}
             keyboardType="numeric"
-            style={{ color: "#5c3721", borderColor: "#5c3721" }}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
           />
           <CustomInput
             label={"Target Daily Smoking Habits"}
@@ -197,27 +198,27 @@ const RegisterScreen = ({ navigation }) => {
             value={targetConsumption}
             onChangeText={setTargetConsumption}
             keyboardType="numeric"
-            style={{ color: "#5c3721", borderColor: "#5c3721" }}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
           />
           <CustomButton
             title={"Register"}
             onPress={handleRegister}
             disabled={!isForm2Filled}
             style={{
-              backgroundColor: !isForm2Filled ? "transparent" : "#5c3721",
-              borderColor: "#5c3721",
+              backgroundColor: !isForm2Filled ? "transparent" : COLOR.primary,
+              borderColor: COLOR.primary,
               borderWidth: 2,
               width: "100%",
               marginTop: 10,
             }}
-            textStyle={{ color: !isForm2Filled ? "#5c3721" : "#fff" }}
+            textStyle={{ color: !isForm2Filled ? COLOR.primary : "#fff" }}
           />
         </View>
       )}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>
         <CustomClickableText
-          textStyle={{ color: "#5c3721" }}
+          textStyle={{ color: COLOR.primary }}
           title={"Login"}
           onPress={() => navigation.navigate("Login")}
         ></CustomClickableText>

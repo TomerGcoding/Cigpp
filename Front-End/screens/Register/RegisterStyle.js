@@ -1,20 +1,20 @@
 import { StyleSheet } from "react-native";
-import { FONT } from "../../constants/theme";
+import { COLOR, FONT } from "../../constants/theme";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#b1bd93",
+    backgroundColor: COLOR.background,
   },
   header: { margin: 20 },
   title: {
     fontSize: 30,
     fontFamily: FONT.bold,
-    color: "#5c3721",
+    color: COLOR.primary,
   },
   subtitle: {
     fontSize: 16,
-    color: "#5c3700",
+    color: COLOR.subPrimary,
     marginBottom: 10,
     fontFamily: FONT.bold,
   },
@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   footerText: {
-    color: "#5c3700",
+    color: COLOR.primary,
     fontSize: 14,
     fontFamily: FONT.regular,
   },

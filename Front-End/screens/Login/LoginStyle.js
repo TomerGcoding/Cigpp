@@ -11,7 +11,7 @@ const styles = StyleSheet.create({
   },
   loginHeader: {
     alignItems: "center",
-    color: "#5c3721",
+    color: COLOR,
     fontSize: 30,
   },
   buttonContainer: {

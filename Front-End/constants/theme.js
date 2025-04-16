@@ -4,4 +4,10 @@ const FONT = {
   italic: "MontserratItalic",
 };
 
-export { FONT };
+const COLOR = {
+  primary: "#5c3721",
+  subPrimary: "#5c3700",
+  background: "#b1bd93",
+};
+
+export { FONT, COLOR };
