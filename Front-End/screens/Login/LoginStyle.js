@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { COLOR } from "../../constants/theme";
 
 const styles = StyleSheet.create({
   container: {
@@ -11,7 +12,7 @@ const styles = StyleSheet.create({
   },
   loginHeader: {
     alignItems: "center",
-    color: COLOR,
+    color: COLOR.primary,
     fontSize: 30,
   },
   buttonContainer: {

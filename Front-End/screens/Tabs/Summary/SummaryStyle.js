@@ -29,11 +29,11 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingHorizontal: 10,
     paddingBottom: 20,
+    alignItems: "center",
   },
   touchableBoxContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 15,
   },
 });
 
