@@ -9,32 +9,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 15,
-    paddingBottom: 15,
+    paddingVertical: 15,
     paddingHorizontal: 20,
     backgroundColor: "#F8F6F0",
     borderBottomWidth: 1,
-    borderBottomColor: "#F8F6F0",
+    borderBottomColor: "#e0ddd7",
   },
   date: {
-    color: "#7779",
+    color: "#777",
     fontSize: 14,
     fontWeight: "bold",
   },
   titleText: {
     color: "#50C878",
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: "bold",
+  },
+  boxContainer: {
+    paddingTop: 10,
+    paddingHorizontal: 10,
+    paddingBottom: 20,
   },
   touchableBoxContainer: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  boxContainer: {
-    marginTop: 20,
-    flex: 1,
-    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 15,
   },
 });
 
