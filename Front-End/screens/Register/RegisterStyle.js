@@ -1,60 +1,25 @@
 import { StyleSheet } from "react-native";
+import { FONT } from "../../constants/theme";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F6F0",
+    backgroundColor: "#b1bd93",
   },
   header: { margin: 20 },
   title: {
     fontSize: 30,
-    fontWeight: "bold",
+    fontFamily: FONT.bold,
+    color: "#5c3721",
   },
   subtitle: {
     fontSize: 16,
-    color: "#777",
+    color: "#5c3700",
     marginBottom: 10,
+    fontFamily: FONT.bold,
   },
   registerFormContainer: {
     margin: 20,
-  },
-  field: {
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: "transparent",
-    borderBottomWidth: 0.5,
-    fontSize: 16,
-  },
-  label: {
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  passwordContainer: {
-    flexDirection: "row",
-    backgroundColor: "transparent",
-    borderBottomWidth: 0.5,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  visibilityIcon: {
-    padding: 12,
-    justifyContent: "center",
-  },
-  button: {
-    backgroundColor: "#50C878",
-    paddingVertical: 15,
-    borderRadius: 30,
-    width: "100%",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
   },
   footer: {
     flexDirection: "row",
@@ -63,13 +28,9 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   footerText: {
-    color: "#777",
+    color: "#5c3700",
     fontSize: 14,
-  },
-  footerLink: {
-    color: "#50C878",
-    fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONT.regular,
   },
 });
 
