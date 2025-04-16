@@ -1,11 +1,15 @@
-import React from "react";
-import { View, Text, Touchable, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Touchable, TouchableOpacity, Modal } from "react-native";
 import styles from "./SummaryStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "react-native-vector-icons";
-import TouchableBox from "../../../components/TouchableBox";
+import TouchableBox from "../../components/TouchableBox";
+import { COLOR } from "../../constants/theme";
+import { useNavigation } from "@react-navigation/native";
+import { Button } from "@react-navigation/elements";
 
-const SummaryScreen = ({ navigation }) => {
+const SummaryScreen = () => {
+  const navigation = useNavigation();
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -14,7 +18,7 @@ const SummaryScreen = ({ navigation }) => {
           <Text style={styles.titleText}>Summary</Text>
         </View>
         <TouchableOpacity
-          onPress={() => navigation.navigate("Summary", { screen: "Profile" })}
+          onPress={() => navigation.navigate("Profile", { screen: "Profile" })}
         >
           <Ionicons name="person-circle-outline" size={40} color="#50C878" />
         </TouchableOpacity>
