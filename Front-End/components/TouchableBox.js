@@ -1,15 +1,31 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "react-native-vector-icons";
+import { COLOR, FONT } from "../constants/theme";
 
-const TouchableBox = ({ title, subtitle, icon, onPress, width, height }) => {
+const TouchableBox = ({
+  title,
+  subtitle,
+  icon,
+  onPress,
+  width,
+  height,
+  color,
+}) => {
   return (
     <TouchableOpacity
-      style={[styles.box, { width: width || "90%", height: height || "auto" }]}
+      style={[
+        styles.box,
+        {
+          width: width || "90%",
+          height: height || "auto",
+          backgroundColor: color || COLOR.lightBackground,
+        },
+      ]}
       onPress={onPress}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name={icon} size={30} color="#50C878" />
+        <Ionicons name={icon} size={30} color={COLOR.primary} />
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{title}</Text>
@@ -23,7 +39,6 @@ const styles = StyleSheet.create({
   box: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F7FBF4",
     borderRadius: 10,
     padding: 15,
     marginTop: 10,
@@ -44,12 +59,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#535e4b",
+    fontFamily: FONT.bold,
+    color: COLOR.primary,
   },
   subtitle: {
     fontSize: 14,
-    color: "#474739",
+    color: COLOR.subPrimary,
+    fontFamily: FONT.regular,
   },
 });
 

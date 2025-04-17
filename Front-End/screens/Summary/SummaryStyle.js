@@ -1,9 +1,10 @@
 import { StyleSheet } from "react-native";
+import { COLOR, FONT } from "../../constants/theme";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F6F0",
+    backgroundColor: COLOR.background,
   },
   header: {
     flexDirection: "row",
@@ -11,19 +12,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 15,
     paddingHorizontal: 20,
-    backgroundColor: "#F8F6F0",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0ddd7",
   },
   date: {
-    color: "#777",
+    color: COLOR.subPrimary,
     fontSize: 14,
-    fontWeight: "bold",
+    fontFamily: FONT.bold,
   },
   titleText: {
-    color: "#50C878",
+    color: COLOR.primary,
     fontSize: 28,
-    fontWeight: "bold",
+    fontFamily: FONT.bold,
   },
   boxContainer: {
     paddingTop: 10,
