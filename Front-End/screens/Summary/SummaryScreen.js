@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { View, Text, Touchable, TouchableOpacity, Modal } from "react-native";
 import styles from "./SummaryStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "react-native-vector-icons";
 import TouchableBox from "../../components/TouchableBox";
 import { COLOR } from "../../constants/theme";
 import { useNavigation } from "@react-navigation/native";
-import { Button } from "@react-navigation/elements";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
+import ProgressCircle from "../../components/ProgressCircle";
+import { AuthContext } from "../../contexts/AuthContext";
 
 const SummaryScreen = () => {
   const navigation = useNavigation();
@@ -26,8 +26,14 @@ const SummaryScreen = () => {
         ></CustomClickableIcon>
       </View>
       <View style={styles.boxContainer}>
+        <ProgressCircle
+          progress={40}
+          total={4}
+          limit={10}
+          //limit={userData?.goals?.dailyLimit || 0}
+        />
         <TouchableBox
-          title="Tracket Cigarettes"
+          title="Tracked Cigarettes"
           subtitle="Today: 0"
           onPress={() =>
             navigation.navigate("Summary", { screen: "TrackedCigarettes" })
