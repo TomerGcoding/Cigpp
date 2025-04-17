@@ -36,14 +36,23 @@ export default function App() {
           {({ user }) => (
             <Stack.Navigator initialRouteName={user ? "Home" : "Login"}>
               {user ? (
-                <Stack.Group
-                  screenOptions={{
-                    headerShown: false,
-                  }}
-                >
-                  <Stack.Screen name="Home" component={HomeTabs} />
-                  <Stack.Screen name="Profile" component={ProfileScreen} />
-                </Stack.Group>
+                <>
+                  <Stack.Group
+                    screenOptions={{
+                      headerShown: false,
+                    }}
+                  >
+                    <Stack.Screen name="Home" component={HomeTabs} />
+                  </Stack.Group>
+                  <Stack.Group
+                    screenOptions={{
+                      presentation: "card",
+                      headerShown: false,
+                    }}
+                  >
+                    <Stack.Screen name="Profile" component={ProfileScreen} />
+                  </Stack.Group>
+                </>
               ) : (
                 <Stack.Group
                   screenOptions={{

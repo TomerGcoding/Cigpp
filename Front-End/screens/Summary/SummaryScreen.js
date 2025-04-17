@@ -7,6 +7,7 @@ import TouchableBox from "../../components/TouchableBox";
 import { COLOR } from "../../constants/theme";
 import { useNavigation } from "@react-navigation/native";
 import { Button } from "@react-navigation/elements";
+import CustomClickableIcon from "../../components/CustomClickableIcon";
 
 const SummaryScreen = () => {
   const navigation = useNavigation();
@@ -17,17 +18,17 @@ const SummaryScreen = () => {
           <Text style={styles.date}>{new Date().toDateString()}</Text>
           <Text style={styles.titleText}>Summary</Text>
         </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Profile", { screen: "Profile" })}
-        >
-          <Ionicons name="person-circle-outline" size={40} color="#50C878" />
-        </TouchableOpacity>
+        <CustomClickableIcon
+          onPress={() => navigation.navigate("Profile")}
+          color={COLOR.primary}
+          size={40}
+          name={"person-circle-outline"}
+        ></CustomClickableIcon>
       </View>
       <View style={styles.boxContainer}>
         <TouchableBox
           title="Tracket Cigarettes"
           subtitle="Today: 0"
-          icon="cigarette-outline"
           onPress={() =>
             navigation.navigate("Summary", { screen: "TrackedCigarettes" })
           }
