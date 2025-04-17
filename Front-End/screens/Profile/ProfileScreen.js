@@ -3,14 +3,16 @@ import { View, Text, Image, TouchableNativeFeedback } from "react-native";
 import styles from "./ProfileStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useContext } from "react";
-import { AuthContext } from "../../contexts/AuthContext";
+import { AuthContext, useAuth } from "../../contexts/AuthContext";
 import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
 import { COLOR, FONT } from "../../constants/theme";
 import SettingsList from "../../components/SettingsList";
+import CustomButton from "../../components/CustomButton";
 
 const ProfileScreen = ({ navigation }) => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useAuth();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -47,6 +49,7 @@ const ProfileScreen = ({ navigation }) => {
         </Text>
       </View>
       <SettingsList />
+      <CustomButton title={"Sign Out"} onPress={logout}></CustomButton>
     </SafeAreaView>
   );
 };
