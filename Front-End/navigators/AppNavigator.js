@@ -7,6 +7,7 @@ import HomeTabs from "./Tabs/HomeTabs";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import AuthStack from "./AuthStack";
 import { useFonts } from "expo-font";
+import ProfileStack from "./ProfileStack";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,21 +37,8 @@ const AppNavigator = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <>
-            <Stack.Group
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="Home" component={HomeTabs} />
-            </Stack.Group>
-            <Stack.Group
-              screenOptions={{
-                presentation: "card",
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="Profile" component={ProfileScreen} />
-            </Stack.Group>
+            <Stack.Screen name="Home" component={HomeTabs} />
+            <Stack.Screen name="Profile" component={ProfileStack} />
           </>
         ) : (
           <Stack.Screen
