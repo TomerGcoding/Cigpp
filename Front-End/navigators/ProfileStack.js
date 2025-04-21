@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
+import BTModal from "../screens/Profile/ProfileModals/BTModal";
 const Stack = createNativeStackNavigator();
 
 const ProfileStack = () => {

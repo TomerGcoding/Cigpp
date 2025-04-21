@@ -19,13 +19,20 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.tomergcoding.FrontEnd"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      "react-native-ble-plx"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "86fcb0ef-81a6-4c78-b6a6-bc4d824ca595"
+      }
+    }
   }
 }
