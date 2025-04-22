@@ -9,16 +9,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   header: {
-    flexDirection: "row",
+    left: -170,
   },
-  headerRight: {
-    flexDirection: "row-reverse",
-    right: -100,
-  },
-  headerLeft: {
-    left: -100,
-  },
-  userDetailesContainer: {
+  userDetailsContainer: {
     alignItems: "center",
   },
 });

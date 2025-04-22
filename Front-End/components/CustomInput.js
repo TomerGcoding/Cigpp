@@ -11,6 +11,7 @@ import { FONT } from "../constants/theme";
 
 const CustomInput = ({
   label = "",
+  withLabel = true,
   placeholder,
   value,
   onChangeText,
@@ -27,7 +28,7 @@ const CustomInput = ({
   };
   return (
     <View style={styles.field}>
-      <Text style={[styles.label, style]}>{label}</Text>
+      {withLabel ? <Text style={[styles.label, style]}>{label}</Text> : null}
       <View style={isPasswordInput ? [styles.passwordContainer, style] : null}>
         <TextInput
           placeholder={placeholder}

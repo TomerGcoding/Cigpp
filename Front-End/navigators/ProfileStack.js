@@ -3,9 +3,7 @@ import ProfileScreen from "../screens/Profile/ProfileScreen";
 import BTModal from "../screens/Profile/ProfileModals/BTModal";
 import NotificationsModal from "../screens/Profile/ProfileModals/NotificationsModal";
 import ChangeGoalsModal from "../screens/Profile/ProfileModals/ChangeGoalsModal";
-import SettingsModal from "../screens/Profile/ProfileModals/SettingsModal";
 import PersonalDetailsModal from "../screens/Profile/ProfileModals/PersonalDetailsModal";
-import MessagesModal from "../screens/Profile/ProfileModals/MessagesModal";
 import { COLOR, FONT } from "../constants/theme";
 const Stack = createNativeStackNavigator();
 
@@ -33,8 +31,6 @@ const ProfileStack = () => {
           name="Personal Details"
           component={PersonalDetailsModal}
         />
-        <Stack.Screen name="Settings" component={SettingsModal} />
-        <Stack.Screen name="Messages" component={MessagesModal} />
       </Stack.Group>
     </Stack.Navigator>
   );
