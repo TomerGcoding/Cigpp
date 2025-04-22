@@ -1,10 +1,15 @@
 import React from "react";
-import { View, Text, Image, TouchableNativeFeedback } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  TouchableNativeFeedback,
+  Modal,
+} from "react-native";
 import styles from "./ProfileStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useContext } from "react";
-import { AuthContext, useAuth } from "../../contexts/AuthContext";
-import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
+import { useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
 import { COLOR, FONT } from "../../constants/theme";
 import SettingsList from "../../components/SettingsList";
@@ -16,14 +21,22 @@ const ProfileScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <CustomClickableIcon
-          name="settings-outline"
-          onPress={() => console.log("Settings pressed")}
-        ></CustomClickableIcon>
-        <CustomClickableIcon
-          name="chatbox-outline"
-          onPress={() => console.log("Messages pressed")}
-        ></CustomClickableIcon>
+        <View style={styles.headerLeft}>
+          <CustomClickableIcon
+            name="chevron-back-outline"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+        <View style={styles.headerRight}>
+          <CustomClickableIcon
+            name="settings-outline"
+            onPress={() => navigation.navigate("Settings")}
+          ></CustomClickableIcon>
+          <CustomClickableIcon
+            name="chatbox-outline"
+            onPress={() => navigation.navigate("Messages")}
+          ></CustomClickableIcon>
+        </View>
       </View>
       <View style={styles.userDetailesContainer}>
         <TouchableNativeFeedback onPress={() => console.log("Quack")}>
@@ -49,7 +62,6 @@ const ProfileScreen = ({ navigation }) => {
         </Text>
       </View>
       <SettingsList />
-      <CustomButton title={"Sign Out"} onPress={logout}></CustomButton>
     </SafeAreaView>
   );
 };

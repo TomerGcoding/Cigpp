@@ -1,7 +1,7 @@
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { COLOR } from "../../../constants/theme";
 
-const BTModal = ({ navigation }) => {
+const NotificationsModal = () => {
   return (
     <View
       style={{
@@ -11,5 +11,4 @@ const BTModal = ({ navigation }) => {
     ></View>
   );
 };
-
-export default BTModal;
+export default NotificationsModal;

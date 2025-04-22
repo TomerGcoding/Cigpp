@@ -38,6 +38,8 @@ const LoginScreen = ({ navigation }) => {
           Alert.alert("Error", "Invalid credentials. Please try agian!");
         } else if (errorCode === "auth/invalid-email") {
           Alert.alert("Error", "Please enter a valid email address");
+        } else if (errorCode === "auth/network-request-failed") {
+          Alert.alert("Error", "Please check your internet connection");
         } else {
           Alert.alert("Error", errorMessage);
         }
