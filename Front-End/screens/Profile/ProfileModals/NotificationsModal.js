@@ -1,19 +1,21 @@
 import { View, Text, StyleSheet, Switch } from "react-native";
 import { COLOR, FONT } from "../../../constants/theme";
-import { useState } from "react";
+import { usePreferences } from "../../../contexts/PreferencesContext";
 
 const NotificationsModal = () => {
-  const [isEnabled, setIsEnabled] = useState(false);
-  const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
+  const { preferences, updatePreference } = usePreferences();
+
+  const toggleSwitch = () =>
+    updatePreference("enableNotifications", !preferences.enableNotifications);
   return (
     <View style={styles.container}>
       <View style={styles.switchContainer}>
-        <Text style={styles.switchText}>Allow Notificaions</Text>
+        <Text style={styles.switchText}>Allow Notifications</Text>
         <Switch
           trackColor={{ false: COLOR.background, true: COLOR.primary }}
-          thumbColor={isEnabled ? COLOR.primary : COLOR.background}
+          thumbColor={preferences.enableNotifications ? "#fff" : "#ddd"}
           onValueChange={toggleSwitch}
-          value={isEnabled}
+          value={preferences.enableNotifications}
         />
       </View>
       <Text style={styles.description}>

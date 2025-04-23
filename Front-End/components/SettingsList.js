@@ -33,7 +33,7 @@ const SettingsItem = ({ icon, title, hasChevron = true, onPress }) => {
   );
 };
 
-const SettingsDivider = () => <View style={styles.divider} />;
+export const SettingsDivider = () => <View style={styles.divider} />;
 
 const SettingsList = () => {
   const navigation = useNavigation();

@@ -1,19 +1,20 @@
 import { View, Text, StyleSheet, Switch } from "react-native";
 import { COLOR, FONT } from "../../../constants/theme";
-import { useState } from "react";
+import { usePreferences } from "../../../contexts/PreferencesContext";
 
-const BTModal = ({ navigation }) => {
-  const [isEnabled, setIsEnabled] = useState(false);
-  const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
+const BTModal = () => {
+  const { preferences, updatePreference } = usePreferences();
+  const toggleSwitch = () =>
+    updatePreference("enableBluetooth", !preferences.enableBluetooth);
   return (
     <View style={styles.container}>
       <View style={styles.switchContainer}>
         <Text style={styles.switchText}>Connect Bluetooth</Text>
         <Switch
           trackColor={{ false: COLOR.background, true: COLOR.primary }}
-          thumbColor={isEnabled ? COLOR.primary : COLOR.background}
+          thumbColor={preferences.enableBluetooth ? "#fff" : "#ddd"}
           onValueChange={toggleSwitch}
-          value={isEnabled}
+          value={preferences.enableBluetooth}
         />
       </View>
       <Text style={styles.description}>

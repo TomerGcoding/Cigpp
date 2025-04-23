@@ -18,6 +18,7 @@ const CustomInput = ({
   secureTextEntry = false,
   keyboardType = "default",
   placeholderTextColor = "#5c3700",
+  editable = true,
   isPasswordInput = false,
   style = {},
 }) => {
@@ -31,6 +32,7 @@ const CustomInput = ({
       {withLabel ? <Text style={[styles.label, style]}>{label}</Text> : null}
       <View style={isPasswordInput ? [styles.passwordContainer, style] : null}>
         <TextInput
+          editable={editable}
           placeholder={placeholder}
           placeholderTextColor={placeholderTextColor}
           style={[

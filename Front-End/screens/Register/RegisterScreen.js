@@ -9,6 +9,7 @@ import CustomInput from "../../components/CustomInput";
 import CustomButton from "../../components/CustomButton";
 import CustomClickableText from "../../components/CustomClickableText";
 import { COLOR } from "../../constants/theme";
+import { usePreferences } from "../../contexts/PreferencesContext";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -20,6 +21,7 @@ const RegisterScreen = ({ navigation }) => {
   const [isForm1Filled, setIsForm1Filled] = useState(false);
   const [isForm2Filled, setIsForm2Filled] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const { saveInitialPreferences } = usePreferences();
   const auth = FIREBASE_AUTH;
 
   useEffect(() => {
@@ -105,6 +107,11 @@ const RegisterScreen = ({ navigation }) => {
         );
         const user = userCredentials.user;
         await updateProfile(user, { displayName: `${username}` });
+        await saveInitialPreferences(
+          username,
+          currentConsumption,
+          targetConsumption
+        );
         Alert.alert("Success", "Account created successfully");
       } else {
         return;
