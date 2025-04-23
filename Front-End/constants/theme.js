@@ -9,7 +9,7 @@ const COLOR = {
   subPrimary: "#5c3700",
   background: "#b1bd93",
   lightBackground: "#c3cca8",
-  third: "sienna",
+  sienna: "sienna",
 };
 
 export { FONT, COLOR };

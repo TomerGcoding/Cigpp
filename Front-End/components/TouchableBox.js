@@ -17,7 +17,7 @@ const TouchableBox = ({
       style={[
         styles.box,
         {
-          width: width || "90%",
+          width: width || "100%",
           height: height || "auto",
           backgroundColor: color || COLOR.lightBackground,
         },
@@ -39,14 +39,10 @@ const styles = StyleSheet.create({
   box: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 10,
+    borderRadius: 35,
     padding: 15,
     marginTop: 10,
-    marginBottom: 15,
     marginHorizontal: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 4,
     overflow: "hidden",

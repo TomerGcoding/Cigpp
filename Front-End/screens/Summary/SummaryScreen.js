@@ -6,11 +6,13 @@ import TouchableBox from "../../components/TouchableBox";
 import { COLOR } from "../../constants/theme";
 import { useNavigation } from "@react-navigation/native";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
-import ProgressCircle from "../../components/ProgressCircle";
-import { AuthContext } from "../../contexts/AuthContext";
+import ProgressCircleCard from "../../components/ProgressCircleCard";
+import { usePreferences } from "../../contexts/PreferencesContext";
 
 const SummaryScreen = () => {
   const navigation = useNavigation();
+  const { preferences } = usePreferences();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -26,27 +28,17 @@ const SummaryScreen = () => {
         ></CustomClickableIcon>
       </View>
       <View style={styles.boxContainer}>
-        <ProgressCircle
-          progress={40}
-          total={4}
-          limit={10}
+        <ProgressCircleCard
+          total={7}
+          limit={preferences.targetConsumption}
+          onPress={() => console.log("Progress Circle Card Pressed")}
           //limit={userData?.goals?.dailyLimit || 0}
-        />
-        <TouchableBox
-          title="Tracked Cigarettes"
-          subtitle="Today: 0"
-          onPress={() =>
-            navigation.navigate("Summary", { screen: "TrackedCigarettes" })
-          }
-          width="90%"
-          height={150}
         />
         <TouchableBox
           title="This Week"
           subtitle="Today: 38"
           icon="flame-outline"
           onPress={() => console.log("Bechki Pressed")}
-          width={"90%"}
           height={150}
         />
         <View style={styles.touchableBoxContainer}>
@@ -54,7 +46,7 @@ const SummaryScreen = () => {
             title="My Device"
             icon="watch-outline"
             onPress={() => console.log("My Device Pressed")}
-            width={"42%"}
+            width={"48%"}
             height={150}
           />
           <TouchableBox
@@ -62,7 +54,7 @@ const SummaryScreen = () => {
             subtitle="March Challenge 2025"
             icon="trophy-outline"
             onPress={() => console.log("Awards Pressed")}
-            width={"42%"}
+            width={"48%"}
             height={150}
           />
         </View>
