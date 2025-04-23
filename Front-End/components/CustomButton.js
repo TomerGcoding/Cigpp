@@ -5,7 +5,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-import { FONT } from "../constants/theme";
+import { COLOR, FONT } from "../constants/theme";
 
 const CustomButton = ({
   title,
@@ -36,7 +36,7 @@ const CustomButton = ({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: "#50C878",
+    backgroundColor: COLOR.primary,
     padding: 12,
     borderRadius: 30,
     width: "90%",

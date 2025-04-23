@@ -35,9 +35,11 @@ const LoginScreen = ({ navigation }) => {
         const errorCode = error.code;
         const errorMessage = error.message;
         if (errorCode === "auth/invalid-credential") {
-          Alert.alert("Error", "Invalid credentials. Please try agian!");
+          Alert.alert("Error", "Invalid credentials. Please try again!");
         } else if (errorCode === "auth/invalid-email") {
           Alert.alert("Error", "Please enter a valid email address");
+        } else if (errorCode === "auth/network-request-failed") {
+          Alert.alert("Error", "Please check your internet connection");
         } else {
           Alert.alert("Error", errorMessage);
         }
@@ -88,6 +90,7 @@ const LoginScreen = ({ navigation }) => {
             Login
           </Text>
           <CustomInput
+            withLabel={false}
             placeholder={"Email"}
             keyboardType={"email-address"}
             value={email}
@@ -95,9 +98,11 @@ const LoginScreen = ({ navigation }) => {
             style={{
               borderColor: "#5c3721",
               color: "#5c3721",
+              marginBottom: 10,
             }}
           ></CustomInput>
           <CustomInput
+            withLabel={false}
             placeholder={"Password"}
             isPasswordInput={true}
             secureTextEntry={true}

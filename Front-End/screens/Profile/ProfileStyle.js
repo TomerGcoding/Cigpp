@@ -9,11 +9,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   header: {
-    flexDirection: "row-reverse",
-    margin: 10,
-    right: -140,
+    left: -170,
   },
-  userDetailesContainer: {
+  userDetailsContainer: {
     alignItems: "center",
   },
 });

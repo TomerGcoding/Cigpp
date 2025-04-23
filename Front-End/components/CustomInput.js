@@ -11,12 +11,14 @@ import { FONT } from "../constants/theme";
 
 const CustomInput = ({
   label = "",
+  withLabel = true,
   placeholder,
   value,
   onChangeText,
   secureTextEntry = false,
   keyboardType = "default",
   placeholderTextColor = "#5c3700",
+  editable = true,
   isPasswordInput = false,
   style = {},
 }) => {
@@ -27,9 +29,10 @@ const CustomInput = ({
   };
   return (
     <View style={styles.field}>
-      <Text style={[styles.label, style]}>{label}</Text>
+      {withLabel ? <Text style={[styles.label, style]}>{label}</Text> : null}
       <View style={isPasswordInput ? [styles.passwordContainer, style] : null}>
         <TextInput
+          editable={editable}
           placeholder={placeholder}
           placeholderTextColor={placeholderTextColor}
           style={[

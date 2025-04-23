@@ -14,6 +14,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     color: COLOR.primary,
     fontSize: 30,
+    marginBottom: 20,
   },
   buttonContainer: {
     alignItems: "center",

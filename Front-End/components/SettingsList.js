@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLOR, FONT } from "../constants/theme";
+import BTModal from "../screens/Profile/ProfileModals/BTModal";
+import { useNavigation } from "@react-navigation/native";
 
 const SettingsItem = ({ icon, title, hasChevron = true, onPress }) => {
   return (
@@ -31,9 +33,10 @@ const SettingsItem = ({ icon, title, hasChevron = true, onPress }) => {
   );
 };
 
-const SettingsDivider = () => <View style={styles.divider} />;
+export const SettingsDivider = () => <View style={styles.divider} />;
 
 const SettingsList = () => {
+  const navigation = useNavigation();
   return (
     <SafeAreaView style={styles.container}>
       <SettingsItem
@@ -41,7 +44,7 @@ const SettingsList = () => {
           <Ionicons name="bluetooth-outline" size={24} color={COLOR.primary} />
         }
         title="Connect Device"
-        onPress={() => console.log("Connect Device pressed")}
+        onPress={() => navigation.navigate("Bluetooth")}
       />
       <SettingsDivider />
 
@@ -54,7 +57,7 @@ const SettingsList = () => {
           />
         }
         title="Notificaions"
-        onPress={() => console.log("Notificaions pressed")}
+        onPress={() => navigation.navigate("Notifications")}
       />
       <SettingsDivider />
 
@@ -63,7 +66,7 @@ const SettingsList = () => {
           <Ionicons name="create-outline" size={24} color={COLOR.primary} />
         }
         title="Change Goals"
-        onPress={() => console.log("Change Goals pressed")}
+        onPress={() => navigation.navigate("Change Goals")}
       />
       <SettingsDivider />
 
@@ -72,7 +75,7 @@ const SettingsList = () => {
           <Ionicons name="person-outline" size={24} color={COLOR.primary} />
         }
         title="Personal Details"
-        onPress={() => console.log("Personal Details pressed")}
+        onPress={() => navigation.navigate("Personal Details")}
       />
     </SafeAreaView>
   );

@@ -1,29 +1,31 @@
 import React from "react";
-import { View, Text, Image, TouchableNativeFeedback } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  TouchableNativeFeedback,
+  Modal,
+} from "react-native";
 import styles from "./ProfileStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useContext } from "react";
-import { AuthContext } from "../../contexts/AuthContext";
-import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
+import { useAuth } from "../../contexts/AuthContext";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
 import { COLOR, FONT } from "../../constants/theme";
 import SettingsList from "../../components/SettingsList";
+import CustomButton from "../../components/CustomButton";
 
 const ProfileScreen = ({ navigation }) => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useAuth();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <CustomClickableIcon
-          name="settings-outline"
-          onPress={() => console.log("Settings pressed")}
-        ></CustomClickableIcon>
-        <CustomClickableIcon
-          name="chatbox-outline"
-          onPress={() => console.log("Messages pressed")}
-        ></CustomClickableIcon>
+          name="chevron-back-outline"
+          onPress={() => navigation.goBack()}
+        />
       </View>
-      <View style={styles.userDetailesContainer}>
+      <View style={styles.userDetailsContainer}>
         <TouchableNativeFeedback onPress={() => console.log("Quack")}>
           <Image
             source={require("../../assets/icons/duck.png")}
@@ -47,6 +49,11 @@ const ProfileScreen = ({ navigation }) => {
         </Text>
       </View>
       <SettingsList />
+      <CustomButton
+        title={"Sign Out"}
+        onPress={() => logout()}
+        style={{ margin: 20 }}
+      />
     </SafeAreaView>
   );
 };
