@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>bnb</groupId>
-	<artifactId>Cigpp</artifactId>
+	<artifactId>Back-End</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Cigpp</name>
 	<description>Cigpp</description>
