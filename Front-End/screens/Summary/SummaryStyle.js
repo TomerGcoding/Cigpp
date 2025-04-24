@@ -24,14 +24,11 @@ const styles = StyleSheet.create({
     fontFamily: FONT.bold,
   },
   boxContainer: {
-    paddingTop: 10,
-    paddingHorizontal: 10,
-    paddingBottom: 20,
+    padding: 5,
     alignItems: "center",
   },
   touchableBoxContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
   },
 });
 

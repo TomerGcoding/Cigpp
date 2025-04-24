@@ -9,8 +9,7 @@ import CustomClickableIcon from "../../components/CustomClickableIcon";
 import ProgressCircleCard from "../../components/ProgressCircleCard";
 import { usePreferences } from "../../contexts/PreferencesContext";
 
-const SummaryScreen = () => {
-  const navigation = useNavigation();
+const SummaryScreen = ({ navigation }) => {
   const { preferences } = usePreferences();
 
   return (
@@ -31,31 +30,30 @@ const SummaryScreen = () => {
         <ProgressCircleCard
           total={7}
           limit={preferences.targetConsumption}
-          onPress={() => console.log("Progress Circle Card Pressed")}
-          //limit={userData?.goals?.dailyLimit || 0}
+          onPress={() => navigation.navigate("Detailed Cigarettes")}
         />
         <TouchableBox
-          title="This Week"
-          subtitle="Today: 38"
-          icon="flame-outline"
-          onPress={() => console.log("Bechki Pressed")}
-          height={150}
+          title="Cigarette Logs"
+          subtitle="View your smoking history"
+          icon="list-outline"
+          onPress={() => navigation.navigate("Cigarette Logs")}
+          height={100}
         />
         <View style={styles.touchableBoxContainer}>
           <TouchableBox
             title="My Device"
             icon="watch-outline"
-            onPress={() => console.log("My Device Pressed")}
+            onPress={() => navigation.navigate("My Device")}
             width={"48%"}
-            height={150}
+            // height={150}
           />
           <TouchableBox
-            title="Awards"
-            subtitle="March Challenge 2025"
+            title="Achievements"
+            subtitle="View your milestones"
             icon="trophy-outline"
-            onPress={() => console.log("Awards Pressed")}
+            onPress={() => navigation.navigate("Achievements")}
             width={"48%"}
-            height={150}
+            // height={150}
           />
         </View>
       </View>

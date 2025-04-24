@@ -17,7 +17,7 @@ const TouchableBox = ({
       style={[
         styles.box,
         {
-          width: width || "100%",
+          width: width || "auto",
           height: height || "auto",
           backgroundColor: color || COLOR.lightBackground,
         },
@@ -25,7 +25,7 @@ const TouchableBox = ({
       onPress={onPress}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name={icon} size={30} color={COLOR.primary} />
+        <Ionicons name={icon} size={30} color={COLOR.sienna} />
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{title}</Text>
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     borderRadius: 35,
     padding: 15,
     marginTop: 10,
-    marginHorizontal: 10,
+    marginHorizontal: 5,
     shadowRadius: 2,
     elevation: 4,
     overflow: "hidden",
@@ -56,11 +56,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontFamily: FONT.bold,
-    color: COLOR.primary,
+    color: COLOR.sienna,
   },
   subtitle: {
     fontSize: 14,
-    color: COLOR.subPrimary,
+    color: COLOR.sienna,
     fontFamily: FONT.regular,
   },
 });
