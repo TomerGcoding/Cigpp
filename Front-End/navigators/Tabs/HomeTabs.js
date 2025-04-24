@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "react-native-vector-icons";
 import { COLOR } from "../../constants/theme";
 import SummaryScreen from "../../screens/Summary/SummaryScreen";
+import ChallengesScreen from "../../screens/Challenges/ChallengesScreen";
 import SummaryStack from "../SummaryStack";
 
 const Tab = createBottomTabNavigator();
@@ -34,7 +35,7 @@ const HomeTabs = () => {
       })}
     >
       <Tab.Screen name="Summary" component={SummaryStack} />
-      <Tab.Screen name="Challenges" component={SummaryScreen} />
+      <Tab.Screen name="Challenges" component={ChallengesScreen} />
     </Tab.Navigator>
   );
 };
