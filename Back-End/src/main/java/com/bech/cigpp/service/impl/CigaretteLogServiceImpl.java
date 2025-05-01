@@ -27,20 +27,32 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
         if (savedCigaretteLog == null) {
             throw new RuntimeException("Failed to save cigarette log");
         }
-        return CigaretteLogMapper.toRequestDto(savedCigaretteLog);
+        return CigaretteLogMapper.toResponseDto(savedCigaretteLog);
     }
 
     @Override
     public List<CigaretteLogResponseDto> getCigaretteLogs(String userId) {
-        return null;
+        List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserId(userId);
+        if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
+            throw new RuntimeException("No cigarette logs found for user: " + userId);
+        }
+        return CigaretteLogMapper.toResponseDtoList(cigaretteLogs);
+
     }
     @Override
     public List<CigaretteLogResponseDto> getCigaretteLogsBetweenDates(String userId, Instant startDate, Instant endDate) {
-        return null;
+        List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
+        if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
+            throw new RuntimeException("No cigarette logs found for user: " + userId + " between dates: " + startDate + " and " + endDate);
+        }
+        return CigaretteLogMapper.toResponseDtoList(cigaretteLogs);
     }
 
     @Override
     public CigaretteLogResponseDto deleteCigaretteLog(Long id) {
-        return null;
+        CigaretteLog cigaretteLog = cigaretteLogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cigarette log not found with id: " + id));
+        cigaretteLogRepository.delete(cigaretteLog);
+        return CigaretteLogMapper.toResponseDto(cigaretteLog);
     }
 }
