@@ -1,5 +1,7 @@
 package com.bech.cigpp.service.api;
 
+import com.bech.cigpp.controller.dto.log.CigaretteLogRequestDto;
+import com.bech.cigpp.controller.dto.log.CigaretteLogResponseDto;
 import com.bech.cigpp.model.CigaretteLog;
 
 import java.time.Instant;
@@ -7,12 +9,12 @@ import java.util.List;
 
 public interface CigaretteLogService {
 
-    void addCigaretteLog(String userId, String description, Instant date);
+    CigaretteLogResponseDto addCigaretteLog(CigaretteLogRequestDto cigaretteLogDto);
 
-    List<CigaretteLog> getCigaretteLogs(String userId);
+    List<CigaretteLogResponseDto> getCigaretteLogs(String userId);
 
-    List<CigaretteLog> getCigaretteLogsBetweenDates(String userId, Instant startDate, Instant endDate);
+    List<CigaretteLogResponseDto> getCigaretteLogsBetweenDates(String userId, Instant startDate, Instant endDate);
 
-    void deleteCigaretteLog(Long id);
+    CigaretteLogResponseDto deleteCigaretteLog(Long id);
 
 }

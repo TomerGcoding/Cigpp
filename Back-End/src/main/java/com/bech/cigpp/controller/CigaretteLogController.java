@@ -1,8 +1,9 @@
 package com.bech.cigpp.controller;
 
-import com.bech.cigpp.model.CigaretteLog;
+import com.bech.cigpp.controller.dto.log.CigaretteLogRequestDto;
+import com.bech.cigpp.controller.dto.log.CigaretteLogResponseDto;
 import com.bech.cigpp.service.api.CigaretteLogService;
-import com.bech.cigpp.service.api.impl.CigaretteLogServiceImpl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,5 +19,9 @@ public class CigaretteLogController {
         this.cigaretteLogService = cigaretteLogService;
     }
 
-
+    @PostMapping
+    public ResponseEntity<CigaretteLogResponseDto> addCigaretteLog(@RequestBody CigaretteLogRequestDto cigaretteLogDto) {
+        CigaretteLogResponseDto response = cigaretteLogService.addCigaretteLog(cigaretteLogDto);
+        return ResponseEntity.ok(response);
+    }
 }
