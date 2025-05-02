@@ -2,6 +2,7 @@ package com.bech.cigpp.service.impl;
 
 import com.bech.cigpp.controller.dto.log.CigaretteLogRequestDto;
 import com.bech.cigpp.controller.dto.log.CigaretteLogResponseDto;
+import com.bech.cigpp.exception.ResourceNotFoundException;
 import com.bech.cigpp.model.CigaretteLog;
 import com.bech.cigpp.repository.CigaretteLogRepository;
 import com.bech.cigpp.service.api.CigaretteLogService;
@@ -34,7 +35,7 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
     public List<CigaretteLogResponseDto> getCigaretteLogs(String userId) {
         List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserId(userId);
         if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
-            throw new RuntimeException("No cigarette logs found for user: " + userId);
+            throw new ResourceNotFoundException("No cigarette logs found for user: " + userId);
         }
         return CigaretteLogMapper.toResponseDtoList(cigaretteLogs);
 
@@ -43,7 +44,7 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
     public List<CigaretteLogResponseDto> getCigaretteLogsBetweenDates(String userId, Instant startDate, Instant endDate) {
         List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
         if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
-            throw new RuntimeException("No cigarette logs found for user: " + userId + " between dates: " + startDate + " and " + endDate);
+            throw new ResourceNotFoundException("No cigarette logs found for user: " + userId + " between dates: " + startDate + " and " + endDate);
         }
         return CigaretteLogMapper.toResponseDtoList(cigaretteLogs);
     }
@@ -51,7 +52,7 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
     @Override
     public CigaretteLogResponseDto deleteCigaretteLog(Long id) {
         CigaretteLog cigaretteLog = cigaretteLogRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cigarette log not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Cigarette log not found with id: " + id));
         cigaretteLogRepository.delete(cigaretteLog);
         return CigaretteLogMapper.toResponseDto(cigaretteLog);
     }
