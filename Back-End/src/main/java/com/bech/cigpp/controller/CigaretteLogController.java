@@ -40,4 +40,10 @@ public class CigaretteLogController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("{id}")
+    public ResponseEntity<CigaretteLogResponseDto> deleteCigaretteLog(@PathVariable Long id) {
+        CigaretteLogResponseDto response = cigaretteLogService.deleteCigaretteLog(id);
+        return ResponseEntity.ok(response);
+    }
+
 }
