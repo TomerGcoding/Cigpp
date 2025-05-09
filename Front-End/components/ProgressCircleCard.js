@@ -41,6 +41,16 @@ const ProgressCircleCard = ({ total, limit, onPress }) => {
     />
   );
 
+  const getProgressColor = (total, limit) => {
+    if (limit > 0 && total >= limit) {
+      return COLOR.red;
+    } else if (total > limit * 0.75) {
+      return COLOR.orange;
+    } else {
+      return COLOR.green;
+    }
+  };
+
   return (
     <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
       <TouchableOpacity
@@ -57,7 +67,7 @@ const ProgressCircleCard = ({ total, limit, onPress }) => {
               {renderCircle("#e6e6e6", COLOR.lightBackground)}
               {/* Progress Circle */}
               {renderCircle(
-                total >= limit ? "#f39c12" : "#2ecc71",
+                getProgressColor(total, limit),
                 "none",
                 strokeDashoffset
               )}

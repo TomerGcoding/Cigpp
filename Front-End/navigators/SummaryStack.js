@@ -27,6 +27,7 @@ const SummaryStack = () => {
         <Stack.Screen
           name="Detailed Cigarettes"
           component={DetailedStatsModal}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Cigarette Logs"
@@ -34,7 +35,11 @@ const SummaryStack = () => {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="My Device" component={BTModal} />
-        <Stack.Screen name="Achievements" component={AchievementsModal} />
+        <Stack.Screen
+          name="Achievements"
+          component={AchievementsModal}
+          options={{ headerShown: false }}
+        />
       </Stack.Group>
     </Stack.Navigator>
   );

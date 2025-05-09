@@ -11,6 +11,8 @@ const TouchableBox = ({
   width,
   height,
   color,
+  iconSize = 30,
+  iconColor,
 }) => {
   return (
     <TouchableOpacity
@@ -23,13 +25,24 @@ const TouchableBox = ({
         },
       ]}
       onPress={onPress}
+      activeOpacity={0.8}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name={icon} size={30} color={COLOR.sienna} />
+        <Ionicons
+          name={icon}
+          size={iconSize}
+          color={iconColor || COLOR.sienna}
+        />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+          {title}
+        </Text>
+        {subtitle && (
+          <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
+            {subtitle}
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -52,16 +65,19 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    flexShrink: 1,
   },
   title: {
     fontSize: 16,
     fontFamily: FONT.bold,
     color: COLOR.sienna,
+    flexWrap: "wrap",
   },
   subtitle: {
     fontSize: 14,
     color: COLOR.sienna,
     fontFamily: FONT.regular,
+    flexWrap: "wrap",
   },
 });
 
