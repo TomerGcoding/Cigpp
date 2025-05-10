@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  TouchableWithoutFeedback,
+  FlatList,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./RegisterStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,7 +15,7 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import CustomInput from "../../components/CustomInput";
 import CustomButton from "../../components/CustomButton";
 import CustomClickableText from "../../components/CustomClickableText";
-import { COLOR } from "../../constants/theme";
+import { COLOR, FONT } from "../../constants/theme";
 import { usePreferences } from "../../contexts/PreferencesContext";
 
 const RegisterScreen = ({ navigation }) => {
@@ -16,8 +23,22 @@ const RegisterScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [deviceId, setDeviceId] = useState("");
   const [currentConsumption, setCurrentConsumption] = useState("");
   const [targetConsumption, setTargetConsumption] = useState("");
+  const [tobaccoBrand, setTobaccoBrand] = useState("");
+  const tobaccoBrands = [
+    "Marlboro",
+    "Camel",
+    "American Spirit",
+    "Parliament",
+    "Winston",
+    "Pall Mall",
+    "Balishag",
+    "Golden Virginia",
+  ];
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [filteredBrands, setFilteredBrands] = useState([]);
   const [isForm1Filled, setIsForm1Filled] = useState(false);
   const [isForm2Filled, setIsForm2Filled] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -29,15 +50,19 @@ const RegisterScreen = ({ navigation }) => {
       email.trim() !== "" &&
       password.trim() !== "" &&
       confirmPassword.trim() !== "" &&
-      username.trim() !== "";
+      username.trim() !== "" &&
+      deviceId.trim() !== "";
     setIsForm1Filled(firstStepFilled);
-  }, [email, password, confirmPassword, username]);
+  }, [email, password, confirmPassword, username, deviceId]);
 
   useEffect(() => {
     const secondStepFilled =
-      currentConsumption.trim() !== "" && targetConsumption.trim() !== "";
+      currentConsumption.trim() !== "" &&
+      targetConsumption.trim() !== "" &&
+      tobaccoBrand.trim() !== "" &&
+      tobaccoBrands.includes(tobaccoBrand);
     setIsForm2Filled(secondStepFilled);
-  }, [currentConsumption, targetConsumption]);
+  }, [currentConsumption, targetConsumption, tobaccoBrand]);
 
   const validateStep1 = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -58,6 +83,7 @@ const RegisterScreen = ({ navigation }) => {
       );
       return false;
     }
+    // API call to check if device ID is valid
 
     return true;
   };
@@ -91,11 +117,6 @@ const RegisterScreen = ({ navigation }) => {
       setCurrentStep(2);
     }
   };
-  const prevStep = () => {
-    if (currentStep === 2) {
-      setCurrentStep(1);
-    }
-  };
 
   const handleRegister = async () => {
     try {
@@ -110,7 +131,8 @@ const RegisterScreen = ({ navigation }) => {
         await saveInitialPreferences(
           username,
           currentConsumption,
-          targetConsumption
+          targetConsumption,
+          tobaccoBrand
         );
         Alert.alert("Success", "Account created successfully");
       } else {
@@ -127,6 +149,23 @@ const RegisterScreen = ({ navigation }) => {
         Alert.alert("Error", error.message);
       }
     }
+  };
+
+  const handleBrandInput = (text) => {
+    setTobaccoBrand(text);
+    if (text.length > 0) {
+      const filtered = tobaccoBrands.filter((brand) =>
+        brand.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredBrands(filtered);
+      setShowDropdown(true);
+    } else {
+      setShowDropdown(false);
+    }
+  };
+  const selectBrand = (brand) => {
+    setTobaccoBrand(brand);
+    setShowDropdown(false);
   };
 
   return (
@@ -175,6 +214,13 @@ const RegisterScreen = ({ navigation }) => {
             onChangeText={setUsername}
             style={{ color: COLOR.primary, borderColor: COLOR.primary }}
           />
+          <CustomInput
+            label={"Device ID"}
+            placeholder={"Enter your device ID"}
+            value={deviceId}
+            onChangeText={setDeviceId}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+          />
           <CustomButton
             title={"Next"}
             onPress={nextStep}
@@ -190,37 +236,72 @@ const RegisterScreen = ({ navigation }) => {
           />
         </View>
       ) : (
-        <View style={styles.registerFormContainer}>
-          <CustomInput
-            label={"Current Daily Smoking Habits"}
-            placeholder={"# of cigarettes smoked per day"}
-            value={currentConsumption}
-            onChangeText={setCurrentConsumption}
-            keyboardType="numeric"
-            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
-          />
-          <CustomInput
-            label={"Target Daily Smoking Habits"}
-            placeholder={"# of cigarettes you want to reduce to"}
-            value={targetConsumption}
-            onChangeText={setTargetConsumption}
-            keyboardType="numeric"
-            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
-          />
-          <CustomButton
-            title={"Register"}
-            onPress={handleRegister}
-            disabled={!isForm2Filled}
-            style={{
-              backgroundColor: !isForm2Filled ? "transparent" : COLOR.primary,
-              borderColor: COLOR.primary,
-              borderWidth: 2,
-              width: "100%",
-              marginTop: 10,
-            }}
-            textStyle={{ color: !isForm2Filled ? COLOR.primary : "#fff" }}
-          />
-        </View>
+        <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
+          <View style={styles.registerFormContainer}>
+            <CustomInput
+              label={"Current Daily Smoking Habits"}
+              placeholder={"# of cigarettes smoked per day"}
+              value={currentConsumption}
+              onChangeText={setCurrentConsumption}
+              keyboardType="numeric"
+              style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+            />
+            <CustomInput
+              label={"Target Daily Smoking Habits"}
+              placeholder={"# of cigarettes you want to reduce to"}
+              value={targetConsumption}
+              onChangeText={setTargetConsumption}
+              keyboardType="numeric"
+              style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+            />
+            <View style={{ width: "100%" }}>
+              <CustomInput
+                label={"Tobacco Brand"}
+                placeholder={"Start typing to select brand"}
+                value={tobaccoBrand}
+                onChangeText={handleBrandInput}
+                onFocus={() => {
+                  if (tobaccoBrand.length > 0) {
+                    setShowDropdown(true);
+                  }
+                }}
+                style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+              />
+              {showDropdown && (
+                <View>
+                  <FlatList
+                    data={filteredBrands}
+                    keyExtractor={(item) => item}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={dropdownStyles.item}
+                        onPress={() => selectBrand(item)}
+                      >
+                        <Text style={dropdownStyles.itemText}>{item}</Text>
+                      </TouchableOpacity>
+                    )}
+                    style={dropdownStyles.list}
+                    nestedScrollEnabled={true}
+                  />
+                </View>
+              )}
+            </View>
+
+            <CustomButton
+              title={"Register"}
+              onPress={handleRegister}
+              disabled={!isForm2Filled}
+              style={{
+                backgroundColor: !isForm2Filled ? "transparent" : COLOR.primary,
+                borderColor: COLOR.primary,
+                borderWidth: 2,
+                width: "100%",
+                marginTop: 10,
+              }}
+              textStyle={{ color: !isForm2Filled ? COLOR.primary : "#fff" }}
+            />
+          </View>
+        </TouchableWithoutFeedback>
       )}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>
@@ -233,4 +314,27 @@ const RegisterScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
+const dropdownStyles = {
+  list: {
+    position: "relative",
+    width: "100%",
+    borderWidth: 1,
+    borderColor: COLOR.primary,
+    borderRadius: 10,
+    backgroundColor: COLOR.lightBackground,
+    maxHeight: 300,
+  },
+  item: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLOR.subPrimary,
+  },
+  itemText: {
+    fontSize: 16,
+    fontFamily: FONT.bold,
+    color: COLOR.primary,
+  },
+};
+
 export default RegisterScreen;

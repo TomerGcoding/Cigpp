@@ -44,6 +44,7 @@ export const PreferencesProvider = ({ children }) => {
             targetConsumption: 0,
             enableBluetooth: false,
             enableNotifications: true,
+            tobaccoBrand: "",
           });
         }
       } catch (error) {
@@ -82,7 +83,8 @@ export const PreferencesProvider = ({ children }) => {
   const saveInitialPreferences = async (
     username,
     currentConsumption,
-    targetConsumption
+    targetConsumption,
+    tobaccoBrand
   ) => {
     try {
       if (user) {
@@ -90,6 +92,7 @@ export const PreferencesProvider = ({ children }) => {
           username,
           currentConsumption: parseInt(currentConsumption),
           targetConsumption: parseInt(targetConsumption),
+          tobaccoBrand,
           enableBluetooth: false,
           enableNotifications: true,
         };
