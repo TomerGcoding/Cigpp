@@ -23,7 +23,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll())
                 .addFilterBefore(firebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-         return http.build();
+         return http.build();//add requestMatchers("/api/**").authenticated() before .anyRequest().permitAll()) to activate authentication for all endpoints
     }
 
     @Bean
