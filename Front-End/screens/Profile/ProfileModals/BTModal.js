@@ -1,11 +1,38 @@
 import { View, Text, StyleSheet, Switch } from "react-native";
 import { COLOR, FONT } from "../../../constants/theme";
 import { usePreferences } from "../../../contexts/PreferencesContext";
+import useBle from "../../../hooks/useBle";
+import React, { useState } from "react";
+import CustomButton from "../../../components/CustomButton";
 
 const BTModal = () => {
   const { preferences, updatePreference } = usePreferences();
-  const toggleSwitch = () =>
+  const {
+    scanForPeripherals,
+    requestPermissions,
+    connectToDevice,
+    allDevices,
+    connectedDevice,
+    disconnectFromDevice,
+    data,
+  } = useBle();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const toggleSwitch = () => {
     updatePreference("enableBluetooth", !preferences.enableBluetooth);
+    console.log("Bluetooth enabled: ", preferences.enableBluetooth);
+    if (!preferences.enableBluetooth) {
+      const isPermissionsEnabled = requestPermissions();
+      if (isPermissionsEnabled) {
+        scanForPeripherals();
+        setIsModalVisible(true);
+      }
+    } else {
+      disconnectFromDevice(connectedDevice);
+      setIsModalVisible(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.switchContainer}>
@@ -20,6 +47,26 @@ const BTModal = () => {
       <Text style={styles.description}>
         Turn on Bluetooth to connect with you Cig++ smart case.
       </Text>
+      {isModalVisible && (
+        <View style={styles.scanContainer}>
+          <Text style={styles.scanText}>Scanning for devices...</Text>
+          {allDevices.map((device) => (
+            <CustomButton
+              key={device.id}
+              onPress={() => connectToDevice(device)}
+              title={device.name}
+            />
+          ))}
+        </View>
+      )}
+      {connectedDevice && preferences.enableBluetooth && (
+        <View style={styles.scanContainer}>
+          <Text style={styles.scanText}>
+            Connected to: {connectedDevice.name}
+          </Text>
+          <Text style={styles.scanText}>Data: {data}</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -49,6 +96,19 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     margin: 10,
     fontSize: 12,
+  },
+  scanText: {
+    color: COLOR.primary,
+    fontFamily: FONT.regular,
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  scanContainer: {
+    backgroundColor: COLOR.lightBackground,
+    padding: 15,
+    width: "100%",
+    marginTop: 10,
+    alignItems: "center",
   },
 });
 
