@@ -1,13 +1,13 @@
-package bnb.cigpp;
+package com.bech.cigpp;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class CigppApplicationTests {
+class BackEndApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+    @Test
+    void contextLoads() {
+    }
 
 }

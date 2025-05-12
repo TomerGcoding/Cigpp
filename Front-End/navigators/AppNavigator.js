@@ -9,6 +9,8 @@ import AuthStack from "./AuthStack";
 import { useFonts } from "expo-font";
 import ProfileStack from "./ProfileStack";
 import { usePreferences } from "../contexts/PreferencesContext";
+import SummaryStack from "./SummaryStack";
+import SummaryScreen from "../screens/Summary/SummaryScreen";
 
 SplashScreen.preventAutoHideAsync();
 

@@ -83,7 +83,7 @@ const SettingsList = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#c3cca8",
+    backgroundColor: COLOR.lightBackground,
     borderRadius: 30,
     justifyContent: "center",
     width: "90%",

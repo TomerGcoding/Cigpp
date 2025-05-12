@@ -26,7 +26,7 @@ const ProfileScreen = ({ navigation }) => {
         />
       </View>
       <View style={styles.userDetailsContainer}>
-        <TouchableNativeFeedback onPress={() => console.log("Quack")}>
+        <TouchableNativeFeedback onPress={() => console.log(user)}>
           <Image
             source={require("../../assets/icons/duck.png")}
             resizeMode="cover"
