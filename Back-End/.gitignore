@@ -3,6 +3,8 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+# Firebase Admin credentials
+src/main/resources/*.json
 
 ### STS ###
 .apt_generated
