@@ -8,9 +8,9 @@ import * as ExpoDevice from "expo-device";
 import base64 from "react-native-base64";
 
 // These are the standard Nordic UART Service UUIDs
-const NORDIC_UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-const NORDIC_UART_RX_CHARACTERISTIC = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // Write to this
-const NORDIC_UART_TX_CHARACTERISTIC = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // Read/notify from this
+const NORDIC_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
+const NORDIC_UART_RX_CHARACTERISTIC = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"; // Write to this
+const NORDIC_UART_TX_CHARACTERISTIC = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"; // Read/notify from this
 
 function useBLE() {
   const bleManager = useMemo(() => new BleManager(), []);
@@ -78,27 +78,24 @@ function useBLE() {
     devices.findIndex((device) => nextDevice.id === device.id) > -1;
 
   const scanForPeripherals = () =>
-    bleManager.startDeviceScan(
-      [NORDIC_UART_SERVICE_UUID],
-      null,
-      (error, device) => {
-        if (error) {
-          console.log(error);
-        }
-        if (device && device.name?.includes("Nordic")) {
-          setAllDevices((prevState) => {
-            if (!isDuplicteDevice(prevState, device)) {
-              return [...prevState, device];
-            }
-            return prevState;
-          });
-        }
+    bleManager.startDeviceScan(null, null, (error, device) => {
+      if (error) {
+        console.log(error);
       }
-    );
+      if (device && device.name?.includes("Cig")) {
+        setAllDevices((prevState) => {
+          if (!isDuplicteDevice(prevState, device)) {
+            return [...prevState, device];
+          }
+          return prevState;
+        });
+      }
+    });
 
   const connectToDevice = async (device) => {
     try {
       const deviceConnection = await bleManager.connectToDevice(device.id);
+      console.log("Connected to device:", deviceConnection);
       setConnectedDevice(deviceConnection);
       await deviceConnection.discoverAllServicesAndCharacteristics();
       bleManager.stopDeviceScan();

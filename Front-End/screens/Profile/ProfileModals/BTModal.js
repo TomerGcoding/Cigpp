@@ -18,25 +18,28 @@ const BTModal = () => {
   } = useBle();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const toggleSwitch = () => {
-    updatePreference("enableBluetooth", !preferences.enableBluetooth);
-    console.log("Bluetooth enabled: ", preferences.enableBluetooth);
+  const toggleSwitch = async () => {
+    setIsModalVisible(!isModalVisible);
     if (!preferences.enableBluetooth) {
-      const isPermissionsEnabled = requestPermissions();
+      const isPermissionsEnabled = await requestPermissions();
       if (isPermissionsEnabled) {
         scanForPeripherals();
-        setIsModalVisible(true);
       }
     } else {
       disconnectFromDevice(connectedDevice);
-      setIsModalVisible(false);
     }
+    updatePreference("enableBluetooth", !preferences.enableBluetooth);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.switchContainer}>
-        <Text style={styles.switchText}>Connect Bluetooth</Text>
+        <Text
+          style={styles.switchText}
+          onPress={() => console.log(preferences.enableBluetooth)}
+        >
+          Connect Bluetooth
+        </Text>
         <Switch
           trackColor={{ false: COLOR.background, true: COLOR.primary }}
           thumbColor={preferences.enableBluetooth ? "#fff" : "#ddd"}
@@ -59,12 +62,16 @@ const BTModal = () => {
           ))}
         </View>
       )}
-      {connectedDevice && preferences.enableBluetooth && (
+      {connectedDevice && (
         <View style={styles.scanContainer}>
           <Text style={styles.scanText}>
             Connected to: {connectedDevice.name}
           </Text>
           <Text style={styles.scanText}>Data: {data}</Text>
+          <CustomButton
+            onPress={() => console.log(connectedDevice)}
+            title="Debug"
+          />
         </View>
       )}
     </View>
