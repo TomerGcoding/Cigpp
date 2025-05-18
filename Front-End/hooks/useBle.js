@@ -121,21 +121,12 @@ function useBLE() {
       console.log("No Data was recieved");
       return -1;
     }
+    console.log("Data Recieved", characteristic.value);
 
     const rawData = base64.decode(characteristic.value);
-    let innerData = -1;
+    console.log("Raw Data", rawData);
 
-    const firstBitValue = Number(rawData) & 0x01;
-
-    if (firstBitValue === 0) {
-      innerData = rawData[1].charCodeAt(0);
-    } else {
-      innerData =
-        Number(rawData[1].charCodeAt(0) << 8) +
-        Number(rawData[2].charCodeAt(2));
-    }
-
-    setData(innerData);
+    setData(rawData);
   };
 
   const startStreamingData = async (device) => {

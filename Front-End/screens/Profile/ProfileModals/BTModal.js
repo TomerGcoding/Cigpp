@@ -36,7 +36,7 @@ const BTModal = () => {
       <View style={styles.switchContainer}>
         <Text
           style={styles.switchText}
-          onPress={() => console.log(preferences.enableBluetooth)}
+          onPress={() => console.log(connectedDevice)}
         >
           Connect Bluetooth
         </Text>
@@ -69,8 +69,8 @@ const BTModal = () => {
           </Text>
           <Text style={styles.scanText}>Data: {data}</Text>
           <CustomButton
-            onPress={() => console.log(connectedDevice)}
-            title="Debug"
+            onPress={() => disconnectFromDevice()}
+            title="Disconnect"
           />
         </View>
       )}
