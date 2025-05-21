@@ -5,6 +5,7 @@ import SummaryScreen from "../screens/Summary/SummaryScreen";
 import CigarettesLogsModal from "../screens/Summary/SummaryModals/CigarettesLogsModal";
 import AchievementsModal from "../screens/Summary/SummaryModals/AchievementsModal";
 import DetailedStatsModal from "../screens/Summary/SummaryModals/DetailedStatsModal";
+import DeviceModal from "../screens/Summary/SummaryModals/DeviceModal";
 const Stack = createNativeStackNavigator();
 
 const SummaryStack = () => {
@@ -34,7 +35,7 @@ const SummaryStack = () => {
           component={CigarettesLogsModal}
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="My Device" component={BTModal} />
+        <Stack.Screen name="My Device" component={DeviceModal} />
         <Stack.Screen
           name="Achievements"
           component={AchievementsModal}
