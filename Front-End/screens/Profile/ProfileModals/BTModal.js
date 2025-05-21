@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Switch } from "react-native";
 import { COLOR, FONT } from "../../../constants/theme";
 import { usePreferences } from "../../../contexts/PreferencesContext";
-import useBle from "../../../hooks/useBle";
+import { useBLE } from "../../../contexts/BleContext";
 import React, { useState } from "react";
 import CustomButton from "../../../components/CustomButton";
 
@@ -15,20 +15,28 @@ const BTModal = () => {
     connectedDevice,
     disconnectFromDevice,
     data,
-  } = useBle();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+    stopScan,
+    isScanning,
+  } = useBLE();
+  const [isModalVisible, setIsModalVisible] = useState(
+    preferences.enableBluetooth
+  );
 
-  const toggleSwitch = async () => {
+  const toggleSwitch = () => {
     setIsModalVisible(!isModalVisible);
-    if (!preferences.enableBluetooth) {
-      const isPermissionsEnabled = await requestPermissions();
-      if (isPermissionsEnabled) {
-        scanForPeripherals();
-      }
-    } else {
-      disconnectFromDevice(connectedDevice);
+    if (preferences.enableBluetooth === true) {
+      disconnectFromDevice();
+      stopScan();
     }
     updatePreference("enableBluetooth", !preferences.enableBluetooth);
+  };
+
+  const handleScan = async () => {
+    const isPermissionsEnabled = await requestPermissions();
+    if (isPermissionsEnabled) {
+      console.log("Permissions granted");
+      scanForPeripherals();
+    }
   };
 
   return (
@@ -51,8 +59,13 @@ const BTModal = () => {
         Turn on Bluetooth to connect with you Cig++ smart case.
       </Text>
       {isModalVisible && (
+        <CustomButton title={"Scan For Devices"} onPress={handleScan} />
+      )}
+      {isScanning && (
         <View style={styles.scanContainer}>
-          <Text style={styles.scanText}>Scanning for devices...</Text>
+          <Text onPress={() => console.log(allDevices)} style={styles.scanText}>
+            Scanning for devices...
+          </Text>
           {allDevices.map((device) => (
             <CustomButton
               key={device.id}

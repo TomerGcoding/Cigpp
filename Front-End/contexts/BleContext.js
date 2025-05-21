@@ -1,10 +1,14 @@
 /* eslint-disable no-bitwise */
-import { useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { PermissionsAndroid, Platform } from "react-native";
 import { BleManager } from "react-native-ble-plx";
-
 import * as ExpoDevice from "expo-device";
-
 import base64 from "react-native-base64";
 
 // These are the standard Nordic UART Service UUIDs
@@ -12,11 +16,23 @@ const NORDIC_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
 const NORDIC_UART_RX_CHARACTERISTIC = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"; // Write to this
 const NORDIC_UART_TX_CHARACTERISTIC = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"; // Read/notify from this
 
-function useBLE() {
+// 1. Create the context
+export const BleContext = createContext();
+
+// 2. Create the provider component
+export const BleProvider = ({ children }) => {
   const bleManager = useMemo(() => new BleManager(), []);
   const [allDevices, setAllDevices] = useState([]);
   const [connectedDevice, setConnectedDevice] = useState(null);
   const [data, setData] = useState(-1);
+  const [isScanning, setIsScanning] = useState(false);
+
+  // // Clean up BLE manager on unmount
+  useEffect(() => {
+    return () => {
+      bleManager.destroy();
+    };
+  }, [bleManager]);
 
   const requestAndroid31Permissions = async () => {
     const bluetoothScanPermission = await PermissionsAndroid.request(
@@ -77,10 +93,15 @@ function useBLE() {
   const isDuplicteDevice = (devices, nextDevice) =>
     devices.findIndex((device) => nextDevice.id === device.id) > -1;
 
-  const scanForPeripherals = () =>
+  const scanForPeripherals = () => {
+    setIsScanning(true);
+    setAllDevices([]);
+    console.log("Scanning for devices...");
     bleManager.startDeviceScan(null, null, (error, device) => {
       if (error) {
         console.log(error);
+        setIsScanning(false);
+        return;
       }
       if (device && device.name?.includes("Cig")) {
         setAllDevices((prevState) => {
@@ -91,23 +112,29 @@ function useBLE() {
         });
       }
     });
+  };
+
+  const stopScan = () => {
+    bleManager.stopDeviceScan();
+    setIsScanning(false);
+  };
 
   const connectToDevice = async (device) => {
     try {
       const deviceConnection = await bleManager.connectToDevice(device.id);
-      console.log("Connected to device:", deviceConnection);
       setConnectedDevice(deviceConnection);
       await deviceConnection.discoverAllServicesAndCharacteristics();
       bleManager.stopDeviceScan();
+      setIsScanning(false);
       startStreamingData(deviceConnection);
     } catch (e) {
       console.log("FAILED TO CONNECT", e);
     }
   };
 
-  const disconnectFromDevice = () => {
+  const disconnectFromDevice = async () => {
     if (connectedDevice) {
-      bleManager.cancelDeviceConnection(connectedDevice.id);
+      await bleManager.cancelDeviceConnection(connectedDevice.id);
       setConnectedDevice(null);
       setData(0);
     }
@@ -147,15 +174,27 @@ function useBLE() {
     }
   };
 
-  return {
-    scanForPeripherals,
-    requestPermissions,
-    connectToDevice,
-    allDevices,
-    connectedDevice,
-    disconnectFromDevice,
-    data,
-  };
-}
+  // Provide the BLE functionality to all children
+  return (
+    <BleContext.Provider
+      value={{
+        scanForPeripherals,
+        stopScan,
+        requestPermissions,
+        connectToDevice,
+        allDevices,
+        connectedDevice,
+        disconnectFromDevice,
+        data,
+        isScanning,
+      }}
+    >
+      {children}
+    </BleContext.Provider>
+  );
+};
 
-export default useBLE;
+// 3. Create a custom hook for easier context consumption
+export function useBLE() {
+  return useContext(BleContext);
+}

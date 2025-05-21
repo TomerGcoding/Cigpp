@@ -4,7 +4,6 @@ import * as SplashScreen from "expo-splash-screen";
 import { AuthContext, useAuth } from "../contexts/AuthContext";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import HomeTabs from "./Tabs/HomeTabs";
-import ProfileScreen from "../screens/Profile/ProfileScreen";
 import AuthStack from "./AuthStack";
 import { useFonts } from "expo-font";
 import ProfileStack from "./ProfileStack";
