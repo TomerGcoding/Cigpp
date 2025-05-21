@@ -11,7 +11,12 @@ const ProfileStack = () => {
   return (
     <Stack.Navigator initialRouteName="Profile">
       <Stack.Screen
-        options={{ headerShown: false }}
+        options={{
+          headerShown: true,
+          headerTintColor: COLOR.primary,
+          headerTransparent: true,
+          headerTitleStyle: { fontFamily: FONT.bold },
+        }}
         name="Profile"
         component={ProfileScreen}
       />

@@ -6,10 +6,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLOR.background,
     alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  header: {
-    left: -170,
+    justifyContent: "center",
   },
   userDetailsContainer: {
     alignItems: "center",

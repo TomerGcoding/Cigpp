@@ -10,6 +10,7 @@ import ProfileStack from "./ProfileStack";
 import { usePreferences } from "../contexts/PreferencesContext";
 import SummaryStack from "./SummaryStack";
 import SummaryScreen from "../screens/Summary/SummaryScreen";
+import { StatusBar } from "react-native";
 
 SplashScreen.preventAutoHideAsync();
 

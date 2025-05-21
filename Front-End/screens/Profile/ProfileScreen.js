@@ -19,12 +19,6 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <CustomClickableIcon
-          name="chevron-back-outline"
-          onPress={() => navigation.goBack()}
-        />
-      </View>
       <View style={styles.userDetailsContainer}>
         <TouchableNativeFeedback onPress={() => console.log(user)}>
           <Image
