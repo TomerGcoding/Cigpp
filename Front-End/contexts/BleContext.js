@@ -174,6 +174,16 @@ export const BleProvider = ({ children }) => {
     }
   };
 
+  const logCigarette = async () => {
+    if (connectedDevice) {
+      connectedDevice.writeCharacteristicWithoutResponseForService(
+        NORDIC_UART_SERVICE_UUID,
+        NORDIC_UART_RX_CHARACTERISTIC,
+        base64.encode(new Date().toString())
+      );
+    }
+  };
+
   // Provide the BLE functionality to all children
   return (
     <BleContext.Provider
@@ -187,6 +197,7 @@ export const BleProvider = ({ children }) => {
         disconnectFromDevice,
         data,
         isScanning,
+        logCigarette,
       }}
     >
       {children}

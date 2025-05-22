@@ -17,6 +17,7 @@ const BTModal = () => {
     data,
     stopScan,
     isScanning,
+    logCigarette,
   } = useBLE();
   const [isModalVisible, setIsModalVisible] = useState(
     preferences.enableBluetooth
@@ -84,6 +85,11 @@ const BTModal = () => {
           <CustomButton
             onPress={() => disconnectFromDevice()}
             title="Disconnect"
+          />
+          <CustomButton
+            title={"Log Cigarette"}
+            style={{ marginTop: 10 }}
+            onPress={() => logCigarette()}
           />
         </View>
       )}
