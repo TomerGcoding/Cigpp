@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     width: "90%",
-    height: "30%",
+    height: "35%",
     marginTop: 10,
   },
   item: {
@@ -122,7 +122,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: COLOR.subPrimary,
     marginLeft: 66,
-    opacity: 0.5,
   },
 });
 

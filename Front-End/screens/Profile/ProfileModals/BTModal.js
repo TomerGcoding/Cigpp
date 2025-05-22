@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Switch } from "react-native";
 import { COLOR, FONT } from "../../../constants/theme";
 import { usePreferences } from "../../../contexts/PreferencesContext";
-import useBle from "../../../hooks/useBle";
+import { useBLE } from "../../../contexts/BleContext";
 import React, { useState } from "react";
 import CustomButton from "../../../components/CustomButton";
 
@@ -15,28 +15,40 @@ const BTModal = () => {
     connectedDevice,
     disconnectFromDevice,
     data,
-  } = useBle();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+    stopScan,
+    isScanning,
+    logCigarette,
+  } = useBLE();
+  const [isModalVisible, setIsModalVisible] = useState(
+    preferences.enableBluetooth
+  );
 
   const toggleSwitch = () => {
+    setIsModalVisible(!isModalVisible);
+    if (preferences.enableBluetooth === true) {
+      disconnectFromDevice();
+      stopScan();
+    }
     updatePreference("enableBluetooth", !preferences.enableBluetooth);
-    console.log("Bluetooth enabled: ", preferences.enableBluetooth);
-    if (!preferences.enableBluetooth) {
-      const isPermissionsEnabled = requestPermissions();
-      if (isPermissionsEnabled) {
-        scanForPeripherals();
-        setIsModalVisible(true);
-      }
-    } else {
-      disconnectFromDevice(connectedDevice);
-      setIsModalVisible(false);
+  };
+
+  const handleScan = async () => {
+    const isPermissionsEnabled = await requestPermissions();
+    if (isPermissionsEnabled) {
+      console.log("Permissions granted");
+      scanForPeripherals();
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.switchContainer}>
-        <Text style={styles.switchText}>Connect Bluetooth</Text>
+        <Text
+          style={styles.switchText}
+          onPress={() => console.log(connectedDevice)}
+        >
+          Connect Bluetooth
+        </Text>
         <Switch
           trackColor={{ false: COLOR.background, true: COLOR.primary }}
           thumbColor={preferences.enableBluetooth ? "#fff" : "#ddd"}
@@ -48,8 +60,13 @@ const BTModal = () => {
         Turn on Bluetooth to connect with you Cig++ smart case.
       </Text>
       {isModalVisible && (
+        <CustomButton title={"Scan For Devices"} onPress={handleScan} />
+      )}
+      {isScanning && (
         <View style={styles.scanContainer}>
-          <Text style={styles.scanText}>Scanning for devices...</Text>
+          <Text onPress={() => console.log(allDevices)} style={styles.scanText}>
+            Scanning for devices...
+          </Text>
           {allDevices.map((device) => (
             <CustomButton
               key={device.id}
@@ -59,12 +76,21 @@ const BTModal = () => {
           ))}
         </View>
       )}
-      {connectedDevice && preferences.enableBluetooth && (
+      {connectedDevice && (
         <View style={styles.scanContainer}>
           <Text style={styles.scanText}>
             Connected to: {connectedDevice.name}
           </Text>
           <Text style={styles.scanText}>Data: {data}</Text>
+          <CustomButton
+            onPress={() => disconnectFromDevice()}
+            title="Disconnect"
+          />
+          <CustomButton
+            title={"Log Cigarette"}
+            style={{ marginTop: 10 }}
+            onPress={() => logCigarette()}
+          />
         </View>
       )}
     </View>

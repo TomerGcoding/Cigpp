@@ -6,16 +6,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLOR.background,
   },
-  header: { margin: 20 },
+  header: { marginLeft: 20, marginTop: 10 },
   title: {
-    fontSize: 30,
+    fontSize: 20,
     fontFamily: FONT.bold,
     color: COLOR.primary,
   },
   subtitle: {
     fontSize: 16,
     color: COLOR.subPrimary,
-    marginBottom: 10,
     fontFamily: FONT.bold,
   },
   registerFormContainer: {

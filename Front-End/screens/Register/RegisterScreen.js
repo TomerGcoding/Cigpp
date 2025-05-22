@@ -6,6 +6,7 @@ import {
   Alert,
   TouchableWithoutFeedback,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./RegisterStyle";
@@ -180,14 +181,17 @@ const RegisterScreen = ({ navigation }) => {
         </Text>
       </View>
       {currentStep === 1 ? (
-        <View style={styles.registerFormContainer}>
+        <ScrollView style={styles.registerFormContainer}>
           <CustomInput
             label={"Email"}
             placeholder={"Enter your email"}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
-            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+            style={{
+              color: COLOR.primary,
+              borderColor: COLOR.primary,
+            }}
           />
           <CustomInput
             label={"Password"}
@@ -234,7 +238,7 @@ const RegisterScreen = ({ navigation }) => {
             }}
             textStyle={{ color: !isForm1Filled ? COLOR.primary : "#fff" }}
           />
-        </View>
+        </ScrollView>
       ) : (
         <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
           <View style={styles.registerFormContainer}>
