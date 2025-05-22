@@ -31,7 +31,7 @@ const TouchableBox = ({
         <Ionicons
           name={icon}
           size={iconSize}
-          color={iconColor || COLOR.sienna}
+          color={iconColor || COLOR.primary}
         />
       </View>
       <View style={styles.textContainer}>
@@ -70,12 +70,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontFamily: FONT.bold,
-    color: COLOR.sienna,
+    color: COLOR.primary,
     flexWrap: "wrap",
   },
   subtitle: {
     fontSize: 14,
-    color: COLOR.sienna,
+    color: COLOR.primary,
     fontFamily: FONT.regular,
     flexWrap: "wrap",
   },

@@ -1,10 +1,8 @@
-import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "react-native-vector-icons";
 import { COLOR } from "../../constants/theme";
-import SummaryScreen from "../../screens/Summary/SummaryScreen";
-import ChallengesScreen from "../../screens/Challenges/ChallengesScreen";
 import SummaryStack from "../SummaryStack";
+import ChallengesStack from "../ChallengesStack";
 
 const Tab = createBottomTabNavigator();
 
@@ -28,14 +26,11 @@ const HomeTabs = () => {
         tabBarInactiveTintColor: COLOR.subPrimary,
         tabBarStyle: {
           backgroundColor: COLOR.background,
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
         },
       })}
     >
       <Tab.Screen name="Summary" component={SummaryStack} />
-      <Tab.Screen name="Challenges" component={ChallengesScreen} />
+      <Tab.Screen name="Challenges" component={ChallengesStack} />
     </Tab.Navigator>
   );
 };

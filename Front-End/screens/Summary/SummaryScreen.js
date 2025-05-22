@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -33,24 +33,13 @@ const SummaryScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <View>
           <Text style={styles.date}>{new Date().toDateString()}</Text>
           <Text style={styles.titleText}>Summary</Text>
         </View>
         <View style={styles.headerRightContainer}>
-          <TouchableOpacity
-            style={styles.bellIcon}
-            onPress={() => navigation.navigate("Notifications")}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={24}
-              color={COLOR.primary}
-            />
-            {/* Add notification badge here if needed */}
-          </TouchableOpacity>
           <CustomClickableIcon
             onPress={() => navigation.navigate("Profile")}
             color={COLOR.primary}
@@ -85,35 +74,37 @@ const SummaryScreen = () => {
         />
 
         {/* Navigation Boxes */}
-        <View style={styles.boxContainer}>
-          <TouchableBox
-            title="Cigarette Logs"
-            subtitle="View your smoking history"
-            icon="list-outline"
-            onPress={() => navigation.navigate("Cigarette Logs")}
-            height={100}
-          />
-          <View style={styles.touchableBoxContainer}>
+        <View>
+          <View style={styles.boxContainer}>
             <TouchableBox
-              title="My Device"
-              subtitle="Manage device"
-              icon="watch-outline"
-              onPress={() => navigation.navigate("My Device")}
-              width={"48%"}
-              height={120}
+              title="Cigarette Logs"
+              subtitle="View your smoking history"
+              icon="list-outline"
+              onPress={() => navigation.navigate("Cigarette Logs")}
+              height={100}
             />
-            <TouchableBox
-              title="Awards"
-              subtitle="View your milestones"
-              icon="trophy-outline"
-              onPress={() => navigation.navigate("Achievements")}
-              width={"48%"}
-              height={120}
-            />
+            <View style={styles.touchableBoxContainer}>
+              <TouchableBox
+                title="My Device"
+                subtitle="Manage device"
+                icon="watch-outline"
+                onPress={() => navigation.navigate("My Device")}
+                width={"48%"}
+                height={120}
+              />
+              <TouchableBox
+                title="Awards"
+                subtitle="View your milestones"
+                icon="trophy-outline"
+                onPress={() => navigation.navigate("Achievements")}
+                width={"48%"}
+                height={120}
+              />
+            </View>
           </View>
         </View>
       </View>
-    </SafeAreaView>
+    </ScrollView>
   );
 };
 

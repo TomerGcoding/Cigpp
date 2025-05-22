@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontFamily: FONT.bold,
-    color: COLOR.sienna,
+    color: COLOR.primary,
     marginBottom: 10,
   },
   circleContainer: {
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 14,
-    color: COLOR.sienna,
+    color: COLOR.primary,
     fontFamily: FONT.regular,
     marginTop: 10,
     textAlign: "center",
@@ -122,13 +122,13 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 42,
     fontFamily: FONT.bold,
-    color: COLOR.sienna,
+    color: COLOR.primary,
     textAlign: "center",
   },
   limitText: {
     fontSize: 16,
     fontFamily: FONT.bold,
-    color: COLOR.sienna,
+    color: COLOR.primary,
     textAlign: "center",
   },
 });
