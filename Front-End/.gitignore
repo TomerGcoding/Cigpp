@@ -1,5 +1,6 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+.vscode/
 # dependencies
 node_modules/
 
@@ -16,6 +17,8 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+/android/
+/ios/
 
 # Metro
 .metro-health-check*
@@ -34,3 +37,5 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+../Back-End/src/main/resources/*.json

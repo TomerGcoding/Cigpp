@@ -1,38 +1,69 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  TouchableWithoutFeedback,
+  FlatList,
+  ScrollView,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import styles from "./RegisterStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "react-native-vector-icons";
-import { auth } from "../../config/firebase/firebaseConfig";
+import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import CustomInput from "../../components/CustomInput";
+import CustomButton from "../../components/CustomButton";
+import CustomClickableText from "../../components/CustomClickableText";
+import { COLOR, FONT } from "../../constants/theme";
+import { usePreferences } from "../../contexts/PreferencesContext";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [username, setUsername] = useState("");
+  const [deviceId, setDeviceId] = useState("");
   const [currentConsumption, setCurrentConsumption] = useState("");
   const [targetConsumption, setTargetConsumption] = useState("");
+  const [tobaccoBrand, setTobaccoBrand] = useState("");
+  const tobaccoBrands = [
+    "Marlboro",
+    "Camel",
+    "American Spirit",
+    "Parliament",
+    "Winston",
+    "Pall Mall",
+    "Balishag",
+    "Golden Virginia",
+  ];
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [filteredBrands, setFilteredBrands] = useState([]);
   const [isForm1Filled, setIsForm1Filled] = useState(false);
   const [isForm2Filled, setIsForm2Filled] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const { saveInitialPreferences } = usePreferences();
+  const auth = FIREBASE_AUTH;
 
   useEffect(() => {
     const firstStepFilled =
       email.trim() !== "" &&
       password.trim() !== "" &&
       confirmPassword.trim() !== "" &&
-      username.trim() !== "";
+      username.trim() !== "" &&
+      deviceId.trim() !== "";
     setIsForm1Filled(firstStepFilled);
-  }, [email, password, confirmPassword, username]);
+  }, [email, password, confirmPassword, username, deviceId]);
 
   useEffect(() => {
     const secondStepFilled =
-      currentConsumption.trim() !== "" && targetConsumption.trim() !== "";
+      currentConsumption.trim() !== "" &&
+      targetConsumption.trim() !== "" &&
+      tobaccoBrand.trim() !== "" &&
+      tobaccoBrands.includes(tobaccoBrand);
     setIsForm2Filled(secondStepFilled);
-  }, [currentConsumption, targetConsumption]);
+  }, [currentConsumption, targetConsumption, tobaccoBrand]);
 
   const validateStep1 = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,14 +84,8 @@ const RegisterScreen = ({ navigation }) => {
       );
       return false;
     }
+    // API call to check if device ID is valid
 
-    // if (parseInt(currentConsumption) <= parseInt(targetConsumption)) {
-    //   Alert.alert(
-    //     "Error",
-    //     "Target Consumption must be lower then current consumption"
-    //   );
-    //   return false;
-    // }
     return true;
   };
 
@@ -93,11 +118,6 @@ const RegisterScreen = ({ navigation }) => {
       setCurrentStep(2);
     }
   };
-  const prevStep = () => {
-    if (currentStep === 2) {
-      setCurrentStep(1);
-    }
-  };
 
   const handleRegister = async () => {
     try {
@@ -107,8 +127,15 @@ const RegisterScreen = ({ navigation }) => {
           email,
           password
         );
+        const user = userCredentials.user;
+        await updateProfile(user, { displayName: `${username}` });
+        await saveInitialPreferences(
+          username,
+          currentConsumption,
+          targetConsumption,
+          tobaccoBrand
+        );
         Alert.alert("Success", "Account created successfully");
-        navigation.navigate("Tabs");
       } else {
         return;
       }
@@ -125,17 +152,25 @@ const RegisterScreen = ({ navigation }) => {
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setIsPasswordVisible(!isPasswordVisible);
+  const handleBrandInput = (text) => {
+    setTobaccoBrand(text);
+    if (text.length > 0) {
+      const filtered = tobaccoBrands.filter((brand) =>
+        brand.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredBrands(filtered);
+      setShowDropdown(true);
+    } else {
+      setShowDropdown(false);
+    }
+  };
+  const selectBrand = (brand) => {
+    setTobaccoBrand(brand);
+    setShowDropdown(false);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        onPress={() => (currentStep === 1 ? navigation.goBack() : prevStep())}
-      >
-        <Ionicons name="arrow-back" size={24} color="#333" />
-      </TouchableOpacity>
       <StatusBar style="dark" />
       <View style={styles.header}>
         <Text style={styles.title}>Create Account</Text>
@@ -146,110 +181,164 @@ const RegisterScreen = ({ navigation }) => {
         </Text>
       </View>
       {currentStep === 1 ? (
-        <View style={styles.registerFormContainer}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              placeholder="Enter your email"
-              placeholderTextColor={"#777"}
-              style={styles.input}
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            ></TextInput>
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="Enter your password"
-                placeholderTextColor={"#777"}
-                secureTextEntry={!isPasswordVisible}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity
-                onPress={togglePasswordVisibility}
-                style={styles.visibilityIcon}
-              >
-                <Ionicons
-                  name={isPasswordVisible ? "eye-off-outline" : "eye-outline"}
-                  size={24}
-                  color="#777"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Confirm Password</Text>
-            <TextInput
-              placeholder="Confirm your password"
-              placeholderTextColor={"#777"}
-              style={styles.input}
-              secureTextEntry={!isPasswordVisible}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            ></TextInput>
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Username</Text>
-            <TextInput
-              placeholder="Choose your username"
-              placeholderTextColor={"#777"}
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-            ></TextInput>
-          </View>
-          <TouchableOpacity
-            style={[styles.button, { opacity: !isForm1Filled ? 0.5 : 1 }]}
-            disabled={!isForm1Filled}
+        <ScrollView style={styles.registerFormContainer}>
+          <CustomInput
+            label={"Email"}
+            placeholder={"Enter your email"}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            style={{
+              color: COLOR.primary,
+              borderColor: COLOR.primary,
+            }}
+          />
+          <CustomInput
+            label={"Password"}
+            placeholder={"Enter your password"}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={true}
+            isPasswordInput={true}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+          />
+          <CustomInput
+            label={"Confirm Password"}
+            placeholder={"Confirm your password"}
+            value={confirmPassword}
+            secureTextEntry={true}
+            isPasswordInput={true}
+            onChangeText={setConfirmPassword}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+          />
+          <CustomInput
+            label={"Username"}
+            placeholder={"Choose your username"}
+            value={username}
+            onChangeText={setUsername}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+          />
+          <CustomInput
+            label={"Device ID"}
+            placeholder={"Enter your device ID"}
+            value={deviceId}
+            onChangeText={setDeviceId}
+            style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+          />
+          <CustomButton
+            title={"Next"}
             onPress={nextStep}
-          >
-            <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
-        </View>
+            disabled={!isForm1Filled}
+            style={{
+              backgroundColor: !isForm1Filled ? "transparent" : COLOR.primary,
+              borderColor: COLOR.primary,
+              borderWidth: 2,
+              width: "100%",
+              marginTop: 10,
+            }}
+            textStyle={{ color: !isForm1Filled ? COLOR.primary : "#fff" }}
+          />
+        </ScrollView>
       ) : (
-        <View style={styles.registerFormContainer}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Current Daily Smoking Habits</Text>
-            <TextInput
-              placeholder="# of cigarettes smoked per day "
-              placeholderTextColor={"#777"}
-              keyboardType="numeric"
-              style={styles.input}
+        <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
+          <View style={styles.registerFormContainer}>
+            <CustomInput
+              label={"Current Daily Smoking Habits"}
+              placeholder={"# of cigarettes smoked per day"}
               value={currentConsumption}
               onChangeText={setCurrentConsumption}
-            ></TextInput>
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Target Daily Smoking Habits </Text>
-            <TextInput
-              placeholder="# of cigarettes you want to reduce to "
-              placeholderTextColor={"#777"}
               keyboardType="numeric"
-              style={styles.input}
+              style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+            />
+            <CustomInput
+              label={"Target Daily Smoking Habits"}
+              placeholder={"# of cigarettes allow yourself daily"}
               value={targetConsumption}
               onChangeText={setTargetConsumption}
-            ></TextInput>
+              keyboardType="numeric"
+              style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+            />
+            <View style={{ width: "100%" }}>
+              <CustomInput
+                label={"Tobacco Brand"}
+                placeholder={"Start typing to select brand"}
+                value={tobaccoBrand}
+                onChangeText={handleBrandInput}
+                onFocus={() => {
+                  if (tobaccoBrand.length > 0) {
+                    setShowDropdown(true);
+                  }
+                }}
+                style={{ color: COLOR.primary, borderColor: COLOR.primary }}
+              />
+              {showDropdown && (
+                <View>
+                  <FlatList
+                    data={filteredBrands}
+                    keyExtractor={(item) => item}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={dropdownStyles.item}
+                        onPress={() => selectBrand(item)}
+                      >
+                        <Text style={dropdownStyles.itemText}>{item}</Text>
+                      </TouchableOpacity>
+                    )}
+                    style={dropdownStyles.list}
+                    nestedScrollEnabled={true}
+                  />
+                </View>
+              )}
+            </View>
+
+            <CustomButton
+              title={"Register"}
+              onPress={handleRegister}
+              disabled={!isForm2Filled}
+              style={{
+                backgroundColor: !isForm2Filled ? "transparent" : COLOR.primary,
+                borderColor: COLOR.primary,
+                borderWidth: 2,
+                width: "100%",
+                marginTop: 10,
+              }}
+              textStyle={{ color: !isForm2Filled ? COLOR.primary : "#fff" }}
+            />
           </View>
-          <TouchableOpacity
-            style={[styles.button, { opacity: !isForm2Filled ? 0.5 : 1 }]}
-            disabled={!isForm2Filled}
-            onPress={handleRegister}
-          >
-            <Text style={styles.buttonText}>Register</Text>
-          </TouchableOpacity>
-        </View>
+        </TouchableWithoutFeedback>
       )}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.footerLink}>Login</Text>
-        </TouchableOpacity>
+        <CustomClickableText
+          textStyle={{ color: COLOR.primary }}
+          title={"Login"}
+          onPress={() => navigation.navigate("Login")}
+        ></CustomClickableText>
       </View>
     </SafeAreaView>
   );
 };
+
+const dropdownStyles = {
+  list: {
+    position: "relative",
+    width: "100%",
+    borderWidth: 1,
+    borderColor: COLOR.primary,
+    borderRadius: 10,
+    backgroundColor: COLOR.lightBackground,
+    maxHeight: 300,
+  },
+  item: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLOR.subPrimary,
+  },
+  itemText: {
+    fontSize: 16,
+    fontFamily: FONT.bold,
+    color: COLOR.primary,
+  },
+};
+
 export default RegisterScreen;
