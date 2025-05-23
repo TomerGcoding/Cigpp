@@ -252,7 +252,7 @@ const RegisterScreen = ({ navigation }) => {
             />
             <CustomInput
               label={"Target Daily Smoking Habits"}
-              placeholder={"# of cigarettes you want to reduce to"}
+              placeholder={"# of cigarettes allow yourself daily"}
               value={targetConsumption}
               onChangeText={setTargetConsumption}
               keyboardType="numeric"
