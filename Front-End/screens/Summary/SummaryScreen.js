@@ -4,15 +4,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { usePreferences } from "../../contexts/PreferencesContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { COLOR } from "../../constants/theme";
 import styles from "./SummaryStyle";
 import TouchableBox from "../../components/TouchableBox";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
 import ProgressCircleCard from "../../components/ProgressCircleCard";
+import CustomButton from "../../components/CustomButton";
 
 const SummaryScreen = () => {
   const navigation = useNavigation();
   const { preferences } = usePreferences();
+  const { user } = useAuth(); // Assuming you have a useAuth hook to get user data
   const [todayCount, setTodayCount] = useState(7); // Replace with actual data
   const [showTip, setShowTip] = useState(true);
   const [streakDays, setStreakDays] = useState(3); // Replace with actual streak
@@ -30,6 +33,30 @@ const SummaryScreen = () => {
     } else {
       return "You're doing well today. Keep it up!";
     }
+  };
+
+  const handleAddCigarette = () => {
+    const newLog = {
+      userId: user?.uid,
+      description: "Manual",
+      date: new Date().toISOString(),
+    };
+
+    fetch("http://10.100.102.4:8080/api/cigarettes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newLog),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Cigarette added:", data);
+        setTodayCount(todayCount + 1); // Update today's count
+      })
+      .catch((error) => {
+        console.error("Error adding cigarette:", error);
+      });
   };
 
   return (
@@ -103,6 +130,7 @@ const SummaryScreen = () => {
             </View>
           </View>
         </View>
+        <CustomButton title={"add cigarette"} onPress={handleAddCigarette} />
       </View>
     </ScrollView>
   );
