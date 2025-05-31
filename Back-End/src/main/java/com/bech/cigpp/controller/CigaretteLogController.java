@@ -40,6 +40,13 @@ public class CigaretteLogController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("{userId}/today")
+    public ResponseEntity<List<CigaretteLogResponseDto>> getTodaysCigaretteLogs(
+            @PathVariable String userId) {
+        List<CigaretteLogResponseDto> response = cigaretteLogService.getTodaysCigaretteLogs(userId);
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("{id}")
     public ResponseEntity<CigaretteLogResponseDto> deleteCigaretteLog(@PathVariable Long id) {
         CigaretteLogResponseDto response = cigaretteLogService.deleteCigaretteLog(id);
