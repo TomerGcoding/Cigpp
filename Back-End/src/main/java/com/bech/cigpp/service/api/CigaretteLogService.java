@@ -15,6 +15,8 @@ public interface CigaretteLogService {
 
     List<CigaretteLogResponseDto> getCigaretteLogsBetweenDates(String userId, Instant startDate, Instant endDate);
 
+    List<CigaretteLogResponseDto> getTodaysCigaretteLogs(String userId);
+
     CigaretteLogResponseDto deleteCigaretteLog(Long id);
 
 }

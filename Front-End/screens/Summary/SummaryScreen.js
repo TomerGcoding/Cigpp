@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,14 +11,33 @@ import TouchableBox from "../../components/TouchableBox";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
 import ProgressCircleCard from "../../components/ProgressCircleCard";
 import CustomButton from "../../components/CustomButton";
+import cigaretteLogService from "../../services/cigaretteLogService";
 
 const SummaryScreen = () => {
   const navigation = useNavigation();
   const { preferences } = usePreferences();
-  const { user } = useAuth(); // Assuming you have a useAuth hook to get user data
-  const [todayCount, setTodayCount] = useState(7); // Replace with actual data
+  const { user } = useAuth();
+  const [todayCount, setTodayCount] = useState(0); // Replace with actual data
   const [showTip, setShowTip] = useState(true);
-  const [streakDays, setStreakDays] = useState(3); // Replace with actual streak
+  const [streakDays, setStreakDays] = useState(3);
+  const [isLoading, setIsLoading] = useState(false);
+  const [todayLogs, setTodayLogs] = useState([]);
+
+  useEffect(() => {
+    const fetchTodayLogs = async () => {
+      setIsLoading(true);
+      try {
+        const logs = await cigaretteLogService.getTodayLogs(user?.uid);
+        setTodayLogs(logs);
+        setTodayCount(logs.length);
+      } catch (error) {
+        console.error("Error fetching today's logs:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTodayLogs();
+  }, [user?.uid]);
 
   // Get motivational message based on progress
   const getMotivationalMessage = () => {
