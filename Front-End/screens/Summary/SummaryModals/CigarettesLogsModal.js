@@ -246,7 +246,6 @@ const CigarettesLogsModal = ({ navigation }) => {
             size={30}
             name="arrow-back"
           />
-          <Text style={styles.title}>Cigarette Logs</Text>
           <TouchableOpacity onPress={handleAdd} style={styles.addButton}>
             <Ionicons
               name="add-circle-outline"
@@ -272,7 +271,7 @@ const CigarettesLogsModal = ({ navigation }) => {
           size={30}
           name="arrow-back"
         />
-        <Text style={styles.title}>Cigarette Logs</Text>
+        <Text style={styles.title}>Cigarette Tracker</Text>
         <TouchableOpacity onPress={handleAdd} style={styles.addButton}>
           <Ionicons name="add-circle-outline" size={30} color={COLOR.primary} />
         </TouchableOpacity>
@@ -307,7 +306,7 @@ const CigarettesLogsModal = ({ navigation }) => {
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{logs.length}</Text>
-          <Text style={styles.statLabel}>Total Logs</Text>
+          <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>
@@ -349,7 +348,7 @@ const CigarettesLogsModal = ({ navigation }) => {
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Add Cigarette Log</Text>
+            <Text style={styles.modalTitle}>Add a Cigarette</Text>
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Time</Text>
@@ -611,6 +610,7 @@ const styles = StyleSheet.create({
     color: COLOR.whitening,
     fontFamily: FONT.medium,
     fontSize: 16,
+    padding: 5,
   },
   disabledButton: {
     opacity: 0.6,
