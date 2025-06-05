@@ -1,6 +1,7 @@
 package com.bech.cigpp.config;
 
 import com.bech.cigpp.firebase.FirebaseAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,22 +15,31 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
+    @Value("${firebase.enabled:false}")
+    private boolean firebaseEnabled;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-         http
+        HttpSecurity httpSecurity = http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll())
-                .addFilterBefore(firebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-         return http.build();//add requestMatchers("/api/**").authenticated() before .anyRequest().permitAll()) to activate authentication for all endpoints
+                        .anyRequest().permitAll()); // For now, permit all requests
+
+        // Only add Firebase filter if Firebase is enabled
+        if (firebaseEnabled) {
+            httpSecurity.addFilterBefore(firebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+            System.out.println("Firebase authentication filter added");
+        } else {
+            System.out.println("Firebase authentication disabled - all requests permitted");
+        }
+
+        return httpSecurity.build();
     }
 
     @Bean
     public FirebaseAuthenticationFilter firebaseAuthenticationFilter() {
         return new FirebaseAuthenticationFilter();
     }
-
 }
-

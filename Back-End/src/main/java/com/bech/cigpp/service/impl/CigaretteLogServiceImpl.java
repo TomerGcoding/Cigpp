@@ -10,6 +10,8 @@ import com.bech.cigpp.util.CigaretteLogMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -45,6 +47,18 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
         List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
         if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
             throw new ResourceNotFoundException("No cigarette logs found for user: " + userId + " between dates: " + startDate + " and " + endDate);
+        }
+        return CigaretteLogMapper.toResponseDtoList(cigaretteLogs);
+    }
+
+    @Override
+    public List<CigaretteLogResponseDto> getTodaysCigaretteLogs(String userId) {
+        ZoneId zoneId = ZoneId.systemDefault();
+        Instant startOfTheDay = LocalDate.now().atStartOfDay(zoneId).toInstant();
+        Instant endOfTheDay = LocalDate.now().plusDays(1).atStartOfDay(zoneId).toInstant().minusMillis(1);
+        List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndDateBetween(userId, startOfTheDay, endOfTheDay);
+        if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
+            throw new ResourceNotFoundException("No cigarette logs found for user: " + userId + " between dates: " + startOfTheDay + " and " + endOfTheDay);
         }
         return CigaretteLogMapper.toResponseDtoList(cigaretteLogs);
     }
