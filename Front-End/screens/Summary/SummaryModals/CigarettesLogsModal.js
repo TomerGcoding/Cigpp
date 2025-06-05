@@ -45,20 +45,9 @@ const CigarettesLogsModal = ({ navigation }) => {
         }),
         date: new Date(log.date).toISOString().split("T")[0],
         source: log.description || "manual",
+        timestamp: new Date(log.date).getTime(),
       }));
-
-      // Sort logs by time in descending order
-      const sortedLogs = transformedLogs.sort((a, b) => {
-        const [hoursA, minutesA] = a.time.split(":").map(Number);
-        const [hoursB, minutesB] = b.time.split(":").map(Number);
-
-        const timeA = hoursA * 60 + minutesA; // Convert to total minutes
-        const timeB = hoursB * 60 + minutesB; // Convert to total minutes
-
-        return timeB - timeA; // Descending order
-      });
-
-      setLogs(sortedLogs);
+      setLogs(transformedLogs);
     } catch (error) {
       console.error("Error fetching logs:", error);
       setLogs([]);
@@ -160,6 +149,7 @@ const CigarettesLogsModal = ({ navigation }) => {
         }),
         date: new Date(createdLog.date).toISOString().split("T")[0],
         source: createdLog.description || "manual",
+        timestamp: new Date(createdLog.date).getTime(),
       };
 
       setLogs([transformedLog, ...logs]);
@@ -195,12 +185,7 @@ const CigarettesLogsModal = ({ navigation }) => {
     // Convert to array for FlatList
     return Object.keys(groups).map((date) => ({
       date,
-      data: groups[date].sort((a, b) => {
-        // Convert time to comparable format (assumes AM/PM format)
-        const timeA = new Date(`1970/01/01 ${a.time}`).getTime();
-        const timeB = new Date(`1970/01/01 ${b.time}`).getTime();
-        return timeB - timeA; // Sort descending
-      }),
+      data: groups[date].sort((a, b) => b.timestamp - a.timestamp),
     }));
   };
 
@@ -216,7 +201,7 @@ const CigarettesLogsModal = ({ navigation }) => {
         <View style={styles.sourceContainer}>
           <Ionicons
             name={
-              item.source === "device"
+              item.source.toLowerCase() === "device"
                 ? "hardware-chip-outline"
                 : "hand-left-outline"
             }
@@ -224,7 +209,9 @@ const CigarettesLogsModal = ({ navigation }) => {
             color={COLOR.subPrimary}
           />
           <Text style={styles.sourceText}>
-            {item.source === "device" ? "Tracked by device" : "Added manually"}
+            {item.source.toLowerCase() === "device"
+              ? "Tracked by device"
+              : "Added manually"}
           </Text>
         </View>
       </View>
