@@ -10,7 +10,7 @@ import TouchableBox from "../../components/TouchableBox";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
 import ProgressCircleCard from "../../components/ProgressCircleCard";
 import CustomButton from "../../components/CustomButton";
-import cigaretteLogService from "../../services/cigaretteLogService";
+import cigaretteLogService from "../../services/CigaretteLogService";
 
 const SummaryScreen = () => {
   const navigation = useNavigation();

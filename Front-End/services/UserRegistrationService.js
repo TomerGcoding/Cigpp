@@ -1,4 +1,3 @@
-// services/userRegistrationService.js
 import { FIREBASE_AUTH } from "../config/firebase/firebaseConfig";
 import {
   createUserWithEmailAndPassword,
@@ -88,7 +87,7 @@ class UserRegistrationService {
         currentConsumption: parseInt(currentConsumption),
         targetConsumption: parseInt(targetConsumption),
         tobacco: tobaccoBrand,
-        isBlEnabled: false, // Default values
+        isBlEnabled: false,
         isNotificationsEnabled: true,
       };
 

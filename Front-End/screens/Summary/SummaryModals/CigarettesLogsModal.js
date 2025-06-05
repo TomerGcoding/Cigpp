@@ -15,7 +15,7 @@ import CustomClickableIcon from "../../../components/CustomClickableIcon";
 import { Ionicons } from "react-native-vector-icons";
 import { COLOR, FONT } from "../../../constants/theme";
 import { useAuth } from "../../../contexts/AuthContext";
-import cigaretteLogService from "../../../services/cigaretteLogService";
+import cigaretteLogService from "../../../services/CigaretteLogService";
 
 const CigarettesLogsModal = ({ navigation }) => {
   const { user } = useAuth();
