@@ -41,25 +41,22 @@ class CigaretteLogService {
     }
   }
 
-  async getTodayLogs(userId) {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/cigarettes/${userId}/today`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch today's logs");
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching today's logs:", error);
-      throw error;
+ async getTodayLogs(userId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/cigarettes/${userId}/today`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch today's logs: ${response.status}`);
     }
+    
+    const logs = await response.json();
+    return Array.isArray(logs) ? logs : [];
+  } catch (error) {
+    console.error("Error fetching today's logs:", error);
+    return []; 
   }
 }
 

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -81,7 +82,7 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
         List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndTimestampBetween(userId, startOfTheDay, endOfTheDay);
 
         if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
-            throw new ResourceNotFoundException("No cigarette logs found for user: " + userId + " between dates: " + startOfTheDay + " and " + endOfTheDay);
+            return Collections.emptyList();
         }
         return CigaretteLogMapper.toResponseDtoList(cigaretteLogs);
     }

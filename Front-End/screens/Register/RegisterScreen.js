@@ -11,13 +11,12 @@ import {
 import { StatusBar } from "expo-status-bar";
 import styles from "./RegisterStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FIREBASE_AUTH } from "../../config/firebase/firebaseConfig";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import CustomInput from "../../components/CustomInput";
 import CustomButton from "../../components/CustomButton";
 import CustomClickableText from "../../components/CustomClickableText";
 import { COLOR, FONT } from "../../constants/theme";
 import { usePreferences } from "../../contexts/PreferencesContext";
+import userRegistrationService from "../../services/UserRegistrationService";
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -28,6 +27,8 @@ const RegisterScreen = ({ navigation }) => {
   const [currentConsumption, setCurrentConsumption] = useState("");
   const [targetConsumption, setTargetConsumption] = useState("");
   const [tobaccoBrand, setTobaccoBrand] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
   const tobaccoBrands = [
     "Marlboro",
     "Camel",
@@ -44,7 +45,6 @@ const RegisterScreen = ({ navigation }) => {
   const [isForm2Filled, setIsForm2Filled] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const { saveInitialPreferences } = usePreferences();
-  const auth = FIREBASE_AUTH;
 
   useEffect(() => {
     const firstStepFilled =
@@ -80,11 +80,10 @@ const RegisterScreen = ({ navigation }) => {
     if (password !== confirmPassword) {
       Alert.alert(
         "Error",
-        "Password confirmation different then password entered"
+        "Password confirmation different than password entered"
       );
       return false;
     }
-    // API call to check if device ID is valid
 
     return true;
   };
@@ -99,7 +98,7 @@ const RegisterScreen = ({ navigation }) => {
     }
 
     if (isNaN(targetCigs) || targetCigs < 0) {
-      Alert.alert("Error", "Please enter a valid number for daily average");
+      Alert.alert("Error", "Please enter a valid number for daily target");
       return false;
     }
 
@@ -110,6 +109,7 @@ const RegisterScreen = ({ navigation }) => {
       );
       return false;
     }
+
     return true;
   };
 
@@ -120,35 +120,70 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   const handleRegister = async () => {
+    if (!validateStep2()) {
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      if (validateStep2()) {
-        const userCredentials = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        const user = userCredentials.user;
-        await updateProfile(user, { displayName: `${username}` });
-        await saveInitialPreferences(
-          username,
-          currentConsumption,
-          targetConsumption,
-          tobaccoBrand
-        );
-        Alert.alert("Success", "Account created successfully");
-      } else {
-        return;
-      }
+      const result = await userRegistrationService.registerUser({
+        email,
+        password,
+        username,
+        deviceId,
+        currentConsumption,
+        targetConsumption,
+        tobaccoBrand,
+      });
+
+      // Save preferences locally
+      await saveInitialPreferences(
+        username,
+        currentConsumption,
+        targetConsumption,
+        tobaccoBrand
+      );
+
+      Alert.alert(
+        "Success",
+        "Account created successfully! Your profile has been set up.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              // Navigation will be handled automatically by AuthContext
+              // since Firebase user state will change
+            },
+          },
+        ]
+      );
     } catch (error) {
-      if (error.code === "auth/email-already-in-use") {
-        Alert.alert("Error", "The email address is already in use.");
-      } else if (error.code === "auth/invalid-email") {
-        Alert.alert("Error", "The email address is not valid.");
-      } else if (error.code === "auth/weak-password") {
-        Alert.alert("Error", "The password is too weak.");
-      } else {
-        Alert.alert("Error", error.message);
+      console.error("Registration error:", error);
+
+      // Handle specific error cases
+      let errorMessage = "Registration failed. Please try again.";
+
+      if (error.message.includes("email-already-in-use")) {
+        errorMessage = "The email address is already in use.";
+      } else if (error.message.includes("invalid-email")) {
+        errorMessage = "The email address is not valid.";
+      } else if (error.message.includes("weak-password")) {
+        errorMessage = "The password is too weak.";
+      } else if (error.message.includes("Device ID not found")) {
+        errorMessage =
+          "Invalid device ID. Please check your device ID and try again.";
+      } else if (
+        error.message.includes("Device already has an associated user")
+      ) {
+        errorMessage = "This device is already registered to another user.";
+      } else if (error.message.includes("Failed to create user profile")) {
+        errorMessage = "Failed to create user profile. Please try again.";
       }
+
+      Alert.alert("Registration Failed", errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -164,6 +199,7 @@ const RegisterScreen = ({ navigation }) => {
       setShowDropdown(false);
     }
   };
+
   const selectBrand = (brand) => {
     setTobaccoBrand(brand);
     setShowDropdown(false);
@@ -180,6 +216,7 @@ const RegisterScreen = ({ navigation }) => {
             : "Step 2: Your Smoking Habits"}
         </Text>
       </View>
+
       {currentStep === 1 ? (
         <ScrollView style={styles.registerFormContainer}>
           <CustomInput
@@ -294,26 +331,31 @@ const RegisterScreen = ({ navigation }) => {
             <CustomButton
               title={"Register"}
               onPress={handleRegister}
-              disabled={!isForm2Filled}
+              disabled={!isForm2Filled || isLoading}
+              isLoading={isLoading}
               style={{
-                backgroundColor: !isForm2Filled ? "transparent" : COLOR.primary,
+                backgroundColor:
+                  !isForm2Filled || isLoading ? "transparent" : COLOR.primary,
                 borderColor: COLOR.primary,
                 borderWidth: 2,
                 width: "100%",
                 marginTop: 10,
               }}
-              textStyle={{ color: !isForm2Filled ? COLOR.primary : "#fff" }}
+              textStyle={{
+                color: !isForm2Filled || isLoading ? COLOR.primary : "#fff",
+              }}
             />
           </View>
         </TouchableWithoutFeedback>
       )}
+
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>
         <CustomClickableText
           textStyle={{ color: COLOR.primary }}
           title={"Login"}
           onPress={() => navigation.navigate("Login")}
-        ></CustomClickableText>
+        />
       </View>
     </SafeAreaView>
   );
