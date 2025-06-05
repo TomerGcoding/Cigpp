@@ -42,6 +42,7 @@ const CigarettesLogsModal = ({ navigation }) => {
         time: new Date(log.date).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
+          hour12: false,
         }),
         date: new Date(log.date).toISOString().split("T")[0],
         source: log.description || "manual",
@@ -89,7 +90,11 @@ const CigarettesLogsModal = ({ navigation }) => {
 
     const now = new Date();
     setTimeInput(
-      now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
     );
   };
 
@@ -146,6 +151,7 @@ const CigarettesLogsModal = ({ navigation }) => {
         time: new Date(createdLog.date).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
+          hour12: false,
         }),
         date: new Date(createdLog.date).toISOString().split("T")[0],
         source: createdLog.description || "manual",
@@ -356,7 +362,7 @@ const CigarettesLogsModal = ({ navigation }) => {
                 style={styles.input}
                 value={timeInput}
                 onChangeText={setTimeInput}
-                placeholder="e.g., 10:30 AM"
+                placeholder="e.g., 10:30"
                 editable={!isAddingLog}
               />
             </View>
