@@ -2,7 +2,7 @@ package com.bech.cigpp.util;
 
 import com.bech.cigpp.controller.dto.log.CigaretteLogRequestDto;
 import com.bech.cigpp.controller.dto.log.CigaretteLogResponseDto;
-import com.bech.cigpp.model.CigaretteLog;
+import com.bech.cigpp.model.log.CigaretteLog;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public class CigaretteLogMapper {
                 cigaretteLog.getId(),
                 cigaretteLog.getUserId(),
                 cigaretteLog.getDescription(),
-                cigaretteLog.getDate()
+                cigaretteLog.getTimestamp()
         );
     }
 
@@ -21,7 +21,7 @@ public class CigaretteLogMapper {
         return CigaretteLog.builder()
                 .userId(cigaretteLogDto.userId())
                 .description(cigaretteLogDto.description())
-                .date(cigaretteLogDto.date())
+                .timestamp(cigaretteLogDto.timestamp())
                 .build();
     }
 

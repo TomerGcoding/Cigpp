@@ -81,6 +81,30 @@ const SummaryScreen = () => {
     }
   };
 
+  const handleAddCigarette = () => {
+    const newLog = {
+      userId: user?.uid,
+      description: "Manual",
+      date: new Date().toISOString(),
+    };
+
+    fetch("http://10.100.102.4:8080/api/cigarettes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newLog),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Cigarette added:", data);
+        setTodayCount(todayCount + 1); // Update today's count
+      })
+      .catch((error) => {
+        console.error("Error adding cigarette:", error);
+      });
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -145,6 +169,7 @@ const SummaryScreen = () => {
             height={100}
           />
         </View>
+        <CustomButton title={"add cigarette"} onPress={handleAddCigarette} />
       </View>
     </ScrollView>
   );
