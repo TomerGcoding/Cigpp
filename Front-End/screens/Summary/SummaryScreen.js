@@ -92,38 +92,31 @@ const SummaryScreen = () => {
         <ProgressCircleCard
           total={todayCount}
           limit={preferences.targetConsumption}
-          onPress={() => navigation.navigate("Detailed Cigarettes")}
+          onPress={() => navigation.navigate("Cigarette Logs")}
         />
+        <View style={styles.boxContainer}>
+          <TouchableBox
+            title="Smoking Overview"
+            subtitle="Track daily, weekly & monthly patterns"
+            icon="stats-chart-outline"
+            onPress={() => navigation.navigate("Detailed Cigarettes")}
+            height={100}
+          />
+          <TouchableBox
+            title="My Device"
+            subtitle="Connect or manage your tracker"
+            icon="watch-outline"
+            onPress={() => navigation.navigate("My Device")}
+            height={100}
+          />
 
-        {/* Navigation Boxes */}
-        <View>
-          <View style={styles.boxContainer}>
-            <TouchableBox
-              title="Cigarette Logs"
-              subtitle="View your smoking history"
-              icon="list-outline"
-              onPress={() => navigation.navigate("Cigarette Logs")}
-              height={100}
-            />
-            <View style={styles.touchableBoxContainer}>
-              <TouchableBox
-                title="My Device"
-                subtitle="Manage device"
-                icon="watch-outline"
-                onPress={() => navigation.navigate("My Device")}
-                width={"48%"}
-                height={120}
-              />
-              <TouchableBox
-                title="Awards"
-                subtitle="View your milestones"
-                icon="trophy-outline"
-                onPress={() => navigation.navigate("Achievements")}
-                width={"48%"}
-                height={120}
-              />
-            </View>
-          </View>
+          <TouchableBox
+            title="Achievements"
+            subtitle="Celebrate your smoke-free wins"
+            icon="trophy-outline"
+            onPress={() => navigation.navigate("Achievements")}
+            height={100}
+          />
         </View>
       </View>
     </ScrollView>

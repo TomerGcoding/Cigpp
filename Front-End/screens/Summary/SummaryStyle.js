@@ -70,13 +70,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   boxContainer: {
-    marginTop: 20,
     marginBottom: 20,
-  },
-  touchableBoxContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 15,
   },
 });
 

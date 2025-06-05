@@ -96,7 +96,6 @@ const styles = StyleSheet.create({
     width: "100%",
     shadowRadius: 16,
     elevation: 4,
-    marginBottom: 5,
   },
   label: {
     fontSize: 16,
