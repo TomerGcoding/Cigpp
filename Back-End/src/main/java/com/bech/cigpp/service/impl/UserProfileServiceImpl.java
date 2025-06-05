@@ -44,8 +44,8 @@ public class UserProfileServiceImpl implements UserProfileService {
             throw new RuntimeException("Failed to save user profile");
         }
 
-        device.setUser(savedUserProfile);
-        deviceRepository.save(device);
+//        device.setUser(savedUserProfile);
+//        deviceRepository.save(device);
 
         return UserProfileMapper.toDto(savedUserProfile);
 

@@ -5,6 +5,7 @@ import com.bech.cigpp.controller.dto.user.UserProfileDto;
 import com.bech.cigpp.service.api.UserProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,7 +20,7 @@ public class UserProfileController {
     }
 
     @PostMapping
-    public ResponseEntity<UserProfileDto> addUserProfile(UserProfileDto dto) {
+    public ResponseEntity<UserProfileDto> addUserProfile(@RequestBody UserProfileDto dto) {
         UserProfileDto response = userProfileService.addUserProfile(dto);
         return ResponseEntity.ok(response);
     }

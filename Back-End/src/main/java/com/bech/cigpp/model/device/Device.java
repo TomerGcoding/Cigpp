@@ -20,7 +20,7 @@ public class Device {
     @Id
     private String deviceId;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "device", fetch = FetchType.LAZY)
     private UserProfile user;
 
 }

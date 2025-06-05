@@ -23,7 +23,8 @@ public class UserProfile {
 
     private String username;
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.PERSIST)
+    @JoinColumn(name = "device_id")
     private Device device;
 
     private Integer currentConsumption;
