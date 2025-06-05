@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,25 +8,64 @@ import {
   Alert,
   TextInput,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomClickableIcon from "../../../components/CustomClickableIcon";
 import { Ionicons } from "react-native-vector-icons";
 import { COLOR, FONT } from "../../../constants/theme";
+import { useAuth } from "../../../contexts/AuthContext";
+import cigaretteLogService from "../../../services/cigaretteLogService";
 
 const CigarettesLogsModal = ({ navigation }) => {
-  const [logs, setLogs] = useState([
-    { id: "1", time: "09:30 AM", date: "2024-03-20", source: "device" },
-    { id: "2", time: "11:45 AM", date: "2024-03-20", source: "device" },
-    { id: "3", time: "02:15 PM", date: "2024-03-20", source: "manual" },
-    { id: "4", time: "04:30 PM", date: "2024-03-20", source: "device" },
-    { id: "5", time: "07:00 PM", date: "2024-03-20", source: "device" },
-  ]);
-
+  const { user } = useAuth();
+  const [logs, setLogs] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [timeInput, setTimeInput] = useState("");
-  const [dateInput, setDateInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAddingLog, setIsAddingLog] = useState(false);
+
+  // Load logs when component mounts
+  useEffect(() => {
+    fetchLogs();
+  }, [user?.uid]);
+
+  const fetchLogs = async () => {
+    if (!user?.uid) return;
+
+    setIsLoading(true);
+    try {
+      const fetchedLogs = await cigaretteLogService.getTodayLogs(user.uid);
+      const transformedLogs = fetchedLogs.map((log) => ({
+        id: log.id.toString(),
+        time: new Date(log.date).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        date: new Date(log.date).toISOString().split("T")[0],
+        source: log.description || "manual",
+      }));
+
+      // Sort logs by time in descending order
+      const sortedLogs = transformedLogs.sort((a, b) => {
+        const [hoursA, minutesA] = a.time.split(":").map(Number);
+        const [hoursB, minutesB] = b.time.split(":").map(Number);
+
+        const timeA = hoursA * 60 + minutesA; // Convert to total minutes
+        const timeB = hoursB * 60 + minutesB; // Convert to total minutes
+
+        return timeB - timeA; // Descending order
+      });
+
+      setLogs(sortedLogs);
+    } catch (error) {
+      console.error("Error fetching logs:", error);
+      setLogs([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDelete = (id) => {
     Alert.alert("Delete Entry", "Are you sure you want to delete this entry?", [
@@ -38,6 +77,18 @@ const CigarettesLogsModal = ({ navigation }) => {
         text: "Delete",
         onPress: () => {
           setLogs(logs.filter((log) => log.id !== id));
+          cigaretteLogService
+            .deleteCigaretteLog(id)
+            .then(() => {
+              Alert.alert("Success", "Cigarette log deleted successfully!");
+            })
+            .catch((error) => {
+              console.error("Error deleting log:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete cigarette log. Please try again."
+              );
+            });
         },
         style: "destructive",
       },
@@ -47,35 +98,88 @@ const CigarettesLogsModal = ({ navigation }) => {
   const handleAdd = () => {
     setAddModalVisible(true);
 
-    // Default values for today
     const now = new Date();
     setTimeInput(
       now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     );
-    setDateInput(now.toISOString().split("T")[0]);
   };
 
-  const addNewLog = () => {
-    // Basic validation
-    if (!timeInput || !dateInput) {
-      Alert.alert("Invalid Input", "Please enter both time and date");
+  const addNewLog = async () => {
+    if (!timeInput) {
+      Alert.alert("Invalid Input", "Please enter a valid time");
       return;
     }
 
-    const newLog = {
-      id: Date.now().toString(),
-      time: timeInput,
-      date: dateInput,
-      source: "manual",
-    };
+    if (!user?.uid) {
+      Alert.alert("Error", "User not authenticated");
+      return;
+    }
 
-    setLogs([newLog, ...logs]);
-    setAddModalVisible(false);
+    setIsAddingLog(true);
+
+    try {
+      const currentDate = new Date();
+
+      let timeForDate;
+      try {
+        const timeStr = timeInput.trim();
+        const tempDateTime = `${
+          currentDate.toISOString().split("T")[0]
+        } ${timeStr}`;
+        timeForDate = new Date(tempDateTime);
+
+        if (isNaN(timeForDate.getTime())) {
+          timeForDate = new Date();
+        }
+      } catch (timeError) {
+        console.warn("Time parsing failed, using current time:", timeError);
+        timeForDate = new Date();
+      }
+
+      // Combine the current date with the parsed time
+      const finalDateTime = new Date(currentDate);
+      finalDateTime.setHours(timeForDate.getHours());
+      finalDateTime.setMinutes(timeForDate.getMinutes());
+      finalDateTime.setSeconds(0);
+      finalDateTime.setMilliseconds(0);
+
+      const newLogData = {
+        userId: user.uid,
+        description: "Manual",
+        date: finalDateTime.toISOString(),
+      };
+
+      console.log("Sending log data:", newLogData);
+      const createdLog = await cigaretteLogService.addCigaretteLog(newLogData);
+
+      const transformedLog = {
+        id: createdLog.id.toString(),
+        time: new Date(createdLog.date).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        date: new Date(createdLog.date).toISOString().split("T")[0],
+        source: createdLog.description || "manual",
+      };
+
+      setLogs([transformedLog, ...logs]);
+      setAddModalVisible(false);
+      setTimeInput("");
+
+      Alert.alert("Success", "Cigarette log added successfully!");
+    } catch (error) {
+      console.error("Error adding cigarette log:", error);
+      Alert.alert("Error", "Failed to add cigarette log. Please try again.");
+    } finally {
+      setIsAddingLog(false);
+    }
   };
 
   const filteredLogs = () => {
     if (selectedFilter === "all") return logs;
-    return logs.filter((log) => log.source === selectedFilter);
+    return logs.filter(
+      (log) => log.source.toLowerCase() === selectedFilter.toLowerCase()
+    );
   };
 
   const groupedLogs = () => {
@@ -145,6 +249,33 @@ const CigarettesLogsModal = ({ navigation }) => {
     </View>
   );
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <CustomClickableIcon
+            onPress={() => navigation.goBack()}
+            color={COLOR.primary}
+            size={30}
+            name="arrow-back"
+          />
+          <Text style={styles.title}>Cigarette Logs</Text>
+          <TouchableOpacity onPress={handleAdd} style={styles.addButton}>
+            <Ionicons
+              name="add-circle-outline"
+              size={30}
+              color={COLOR.primary}
+            />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLOR.primary} />
+          <Text style={styles.loadingText}>Loading logs...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -193,13 +324,13 @@ const CigarettesLogsModal = ({ navigation }) => {
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>
-            {logs.filter((log) => log.source === "device").length}
+            {logs.filter((log) => log.source.toLowerCase() === "device").length}
           </Text>
           <Text style={styles.statLabel}>Device</Text>
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>
-            {logs.filter((log) => log.source === "manual").length}
+            {logs.filter((log) => log.source.toLowerCase() === "manual").length}
           </Text>
           <Text style={styles.statLabel}>Manual</Text>
         </View>
@@ -240,16 +371,7 @@ const CigarettesLogsModal = ({ navigation }) => {
                 value={timeInput}
                 onChangeText={setTimeInput}
                 placeholder="e.g., 10:30 AM"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Date</Text>
-              <TextInput
-                style={styles.input}
-                value={dateInput}
-                onChangeText={setDateInput}
-                placeholder="YYYY-MM-DD"
+                editable={!isAddingLog}
               />
             </View>
 
@@ -257,15 +379,25 @@ const CigarettesLogsModal = ({ navigation }) => {
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setAddModalVisible(false)}
+                disabled={isAddingLog}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.modalButton, styles.addButton]}
+                style={[
+                  styles.modalButton,
+                  styles.addButton,
+                  isAddingLog && styles.disabledButton,
+                ]}
                 onPress={addNewLog}
+                disabled={isAddingLog}
               >
-                <Text style={styles.addButtonText}>Add</Text>
+                {isAddingLog ? (
+                  <ActivityIndicator size="small" color={COLOR.whitening} />
+                ) : (
+                  <Text style={styles.addButtonText}>Add</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -294,6 +426,17 @@ const styles = StyleSheet.create({
   },
   addButton: {
     padding: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    color: COLOR.primary,
   },
   filterContainer: {
     flexDirection: "row",
@@ -481,6 +624,9 @@ const styles = StyleSheet.create({
     color: COLOR.whitening,
     fontFamily: FONT.medium,
     fontSize: 16,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 
