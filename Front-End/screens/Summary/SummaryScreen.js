@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { usePreferences } from "../../contexts/PreferencesContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { COLOR } from "../../constants/theme";
@@ -17,38 +17,65 @@ const SummaryScreen = () => {
   const navigation = useNavigation();
   const { preferences } = usePreferences();
   const { user } = useAuth();
-  const [todayCount, setTodayCount] = useState(0); // Replace with actual data
+  const [todayCount, setTodayCount] = useState(0);
   const [showTip, setShowTip] = useState(true);
-  const [streakDays, setStreakDays] = useState(3);
+  const [streakDays, setStreakDays] = useState(3); // Keep hardcoded for now
   const [isLoading, setIsLoading] = useState(false);
   const [todayLogs, setTodayLogs] = useState([]);
 
-  useEffect(() => {
-    const fetchTodayLogs = async () => {
-      setIsLoading(true);
-      try {
-        const logs = await cigaretteLogService.getTodayLogs(user?.uid);
-        setTodayLogs(logs);
-        setTodayCount(logs.length);
-      } catch (error) {
-        console.error("Error fetching today's logs:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchTodayLogs();
+  // Fetch today's logs function
+  const fetchTodayLogs = useCallback(async () => {
+    if (!user?.uid) return;
+
+    setIsLoading(true);
+    try {
+      const logs = await cigaretteLogService.getTodayLogs(user.uid);
+      setTodayLogs(logs);
+      setTodayCount(logs.length);
+      console.log("Today's logs fetched:", logs.length);
+    } catch (error) {
+      console.error("Error fetching today's logs:", error);
+      setTodayLogs([]);
+      setTodayCount(0);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user?.uid]);
+
+  // Load data on component mount and when user changes
+  useEffect(() => {
+    if (user?.uid) {
+      fetchTodayLogs();
+    }
+  }, [user?.uid, fetchTodayLogs]);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        fetchTodayLogs();
+      }
+    }, [user?.uid, fetchTodayLogs])
+  );
 
   // Get motivational message based on progress
   const getMotivationalMessage = () => {
+    if (preferences.targetConsumption === 0) {
+      return "Set your daily target in settings to track progress.";
+    }
+
     const ratio = todayCount / preferences.targetConsumption;
 
-    if (ratio >= 1) {
+    if (ratio >= 1.5) {
+      return `You've exceeded your limit significantly. Consider taking a break.`;
+    } else if (ratio >= 1) {
       return "You've reached your daily limit. Consider taking a break.";
     } else if (ratio >= 0.75) {
       return "You're approaching your daily limit. Try to pace yourself.";
     } else if (streakDays >= 3) {
       return `Great job! ${streakDays} days of staying under your limit.`;
+    } else if (todayCount === 0) {
+      return "Perfect start to the day! Keep it up.";
     } else {
       return "You're doing well today. Keep it up!";
     }
@@ -116,38 +143,31 @@ const SummaryScreen = () => {
         <ProgressCircleCard
           total={todayCount}
           limit={preferences.targetConsumption}
-          onPress={() => navigation.navigate("Detailed Cigarettes")}
+          onPress={() => navigation.navigate("Cigarette Logs")}
         />
+        <View style={styles.boxContainer}>
+          <TouchableBox
+            title="Smoking Overview"
+            subtitle="Track daily, weekly & monthly patterns"
+            icon="stats-chart-outline"
+            onPress={() => navigation.navigate("Detailed Cigarettes")}
+            height={100}
+          />
+          <TouchableBox
+            title="My Device"
+            subtitle="Connect or manage your tracker"
+            icon="watch-outline"
+            onPress={() => navigation.navigate("My Device")}
+            height={100}
+          />
 
-        {/* Navigation Boxes */}
-        <View>
-          <View style={styles.boxContainer}>
-            <TouchableBox
-              title="Cigarette Logs"
-              subtitle="View your smoking history"
-              icon="list-outline"
-              onPress={() => navigation.navigate("Cigarette Logs")}
-              height={100}
-            />
-            <View style={styles.touchableBoxContainer}>
-              <TouchableBox
-                title="My Device"
-                subtitle="Manage device"
-                icon="watch-outline"
-                onPress={() => navigation.navigate("My Device")}
-                width={"48%"}
-                height={120}
-              />
-              <TouchableBox
-                title="Awards"
-                subtitle="View your milestones"
-                icon="trophy-outline"
-                onPress={() => navigation.navigate("Achievements")}
-                width={"48%"}
-                height={120}
-              />
-            </View>
-          </View>
+          <TouchableBox
+            title="Achievements"
+            subtitle="Celebrate your smoke-free wins"
+            icon="trophy-outline"
+            onPress={() => navigation.navigate("Achievements")}
+            height={100}
+          />
         </View>
         <CustomButton title={"add cigarette"} onPress={handleAddCigarette} />
       </View>

@@ -79,6 +79,7 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
         Instant startOfTheDay = LocalDate.now().atStartOfDay(zoneId).toInstant();
         Instant endOfTheDay = LocalDate.now().plusDays(1).atStartOfDay(zoneId).toInstant().minusMillis(1);
         List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndTimestampBetween(userId, startOfTheDay, endOfTheDay);
+
         if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
             throw new ResourceNotFoundException("No cigarette logs found for user: " + userId + " between dates: " + startOfTheDay + " and " + endOfTheDay);
         }
