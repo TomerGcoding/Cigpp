@@ -35,11 +35,11 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
         }
         if (dto.deviceId() != null) {
             Device device = deviceRepository.findById(dto.deviceId()).orElseThrow(() -> new IllegalArgumentException("Device ID not found: " + dto.deviceId()));
-            if (device.getUserId() == null) {
+            if (device.getUser().getUserId() == null) {
                 throw new IllegalStateException("Device does noy have an associated user");
             }
             log = CigaretteLog.builder()
-                    .userId(device.getUserId())
+                    .userId(device.getUser().getUserId())
                     .description(dto.description())
                     .timestamp(dto.timestamp())
                     .build();

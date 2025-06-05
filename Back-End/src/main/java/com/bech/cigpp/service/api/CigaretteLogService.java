@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface CigaretteLogService {
 
-    CigaretteLogResponseDto addCigaretteLog(CigaretteLogRequestDto cigaretteLogDto);
+    CigaretteLogResponseDto addCigaretteLog(CigaretteLogRequestDto dto);
 
     List<CigaretteLogResponseDto> getCigaretteLogs(String userId);
 

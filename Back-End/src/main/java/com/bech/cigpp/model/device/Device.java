@@ -1,17 +1,13 @@
 package com.bech.cigpp.model.device;
 
 
-import io.grpc.stub.ServerCalls;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.bech.cigpp.model.user.UserProfile;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.print.DocFlavor;
 
 @Entity
 @Table(name = "devices")
@@ -24,7 +20,7 @@ public class Device {
     @Id
     private String deviceId;
 
-    @Column(name = "user_id")
-    private String userId;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserProfile user;
 
 }
