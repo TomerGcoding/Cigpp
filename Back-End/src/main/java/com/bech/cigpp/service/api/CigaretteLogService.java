@@ -2,7 +2,6 @@ package com.bech.cigpp.service.api;
 
 import com.bech.cigpp.controller.dto.log.CigaretteLogRequestDto;
 import com.bech.cigpp.controller.dto.log.CigaretteLogResponseDto;
-import com.bech.cigpp.model.CigaretteLog;
 
 import java.time.Instant;
 import java.util.List;

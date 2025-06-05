@@ -4,7 +4,8 @@ import java.time.Instant;
 
 public record CigaretteLogRequestDto(
         String userId,
+        String deviceId,
         String description,
-        Instant date
+        Instant timestamp
 ) {
 }

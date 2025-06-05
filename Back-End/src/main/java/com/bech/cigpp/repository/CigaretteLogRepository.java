@@ -1,6 +1,6 @@
 package com.bech.cigpp.repository;
 
-import com.bech.cigpp.model.CigaretteLog;
+import com.bech.cigpp.model.log.CigaretteLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
