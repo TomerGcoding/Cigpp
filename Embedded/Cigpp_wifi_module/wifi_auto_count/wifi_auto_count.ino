@@ -23,10 +23,10 @@ void setup() {
   Serial.println("\nConnected to WiFi");
 
   // Configure NTP
-  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  configTime(3*3600, 0, "pool.ntp.org", "time.nist.gov");
   Serial.println("Waiting for NTP time sync...");
   time_t now = time(nullptr);
-  while (now < 8 * 3600 * 2) {
+  while (now < 24 * 3600) {  // Wait until at least Jan 2, 1970
     delay(500);
     Serial.print("*");
     now = time(nullptr);
@@ -45,6 +45,7 @@ void loop() {
 
   if (val == HIGH && magnetPresent) {
     Serial.println("No magnet.");
+    Serial.println(String(ESP.getChipId(), HEX));
     magnetRemovedTime = millis();
     magnetPresent = false;
   }
@@ -67,7 +68,7 @@ void sendMagnetRemovedEvent() {
 
     // Get time in ISO 8601
     time_t now = time(nullptr);
-    struct tm* timeinfo = gmtime(&now);
+    struct tm* timeinfo = localtime(&now);
     char isoTime[30];
     strftime(isoTime, sizeof(isoTime), "%Y-%m-%dT%H:%M:%SZ", timeinfo);
 
@@ -75,9 +76,9 @@ void sendMagnetRemovedEvent() {
     String chipId = String(ESP.getChipId(), HEX);
 
     String json = "{";
-    json += "\"userId\": \"" + chipId + "\",";
-    json += "\"description\": \"Auto\",";
-    json += "\"date\": \"" + String(isoTime) + "\"";
+    json += "\"deviceId\": \"" + chipId + "\",";
+    json += "\"description\": \"device\",";
+    json += "\"timestamp\": \"" + String(isoTime) + "\"";
     json += "}";
 
     int httpCode = http.POST(json);

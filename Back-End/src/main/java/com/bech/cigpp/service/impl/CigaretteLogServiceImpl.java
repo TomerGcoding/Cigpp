@@ -66,7 +66,7 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
     }
     @Override
     public List<CigaretteLogResponseDto> getCigaretteLogsBetweenDates(String userId, Instant startDate, Instant endDate) {
-        List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
+        List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndTimestampBetween(userId, startDate, endDate);
         if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
             throw new ResourceNotFoundException("No cigarette logs found for user: " + userId + " between dates: " + startDate + " and " + endDate);
         }
@@ -78,7 +78,7 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
         ZoneId zoneId = ZoneId.systemDefault();
         Instant startOfTheDay = LocalDate.now().atStartOfDay(zoneId).toInstant();
         Instant endOfTheDay = LocalDate.now().plusDays(1).atStartOfDay(zoneId).toInstant().minusMillis(1);
-        List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndDateBetween(userId, startOfTheDay, endOfTheDay);
+        List<CigaretteLog> cigaretteLogs = cigaretteLogRepository.findByUserIdAndTimestampBetween(userId, startOfTheDay, endOfTheDay);
         if (cigaretteLogs == null || cigaretteLogs.isEmpty()) {
             throw new ResourceNotFoundException("No cigarette logs found for user: " + userId + " between dates: " + startOfTheDay + " and " + endOfTheDay);
         }
