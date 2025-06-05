@@ -39,14 +39,14 @@ const CigarettesLogsModal = ({ navigation }) => {
       const fetchedLogs = await cigaretteLogService.getTodayLogs(user.uid);
       const transformedLogs = fetchedLogs.map((log) => ({
         id: log.id.toString(),
-        time: new Date(log.date).toLocaleTimeString([], {
+        time: new Date(log.timestamp).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
         }),
-        date: new Date(log.date).toISOString().split("T")[0],
+        date: new Date(log.timestamp).toISOString().split("T")[0],
         source: log.description || "manual",
-        timestamp: new Date(log.date).getTime(),
+        timestamp: new Date(log.timestamp).getTime(),
       }));
       setLogs(transformedLogs);
     } catch (error) {
@@ -140,7 +140,7 @@ const CigarettesLogsModal = ({ navigation }) => {
       const newLogData = {
         userId: user.uid,
         description: "Manual",
-        date: finalDateTime.toISOString(),
+        timestamp: finalDateTime.toISOString(),
       };
 
       console.log("Sending log data:", newLogData);
@@ -148,14 +148,14 @@ const CigarettesLogsModal = ({ navigation }) => {
 
       const transformedLog = {
         id: createdLog.id.toString(),
-        time: new Date(createdLog.date).toLocaleTimeString([], {
+        time: new Date(createdLog.timestamp).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
         }),
-        date: new Date(createdLog.date).toISOString().split("T")[0],
+        date: new Date(createdLog.timestamp).toISOString().split("T")[0],
         source: createdLog.description || "manual",
-        timestamp: new Date(createdLog.date).getTime(),
+        timestamp: new Date(createdLog.timestamp).getTime(),
       };
 
       setLogs([transformedLog, ...logs]);
