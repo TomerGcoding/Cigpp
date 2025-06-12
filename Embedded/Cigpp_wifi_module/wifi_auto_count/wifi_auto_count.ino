@@ -9,7 +9,7 @@ bool triggered = false;
 
 const char* ssid = "OmerSh";
 const char* password = "0542304442";
-const char* serverUrl = "http://10.100.102.7:8080/api/cigarettes";  // Replace with your actual endpoint
+const char* serverUrl = "http://10.100.102.4:8080/api/cigarettes";  // Replace with your actual endpoint
 
 void setup() {
   Serial.begin(9600);
@@ -23,7 +23,7 @@ void setup() {
   Serial.println("\nConnected to WiFi");
 
   // Configure NTP
-  configTime(3*3600, 0, "pool.ntp.org", "time.nist.gov");
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
   Serial.println("Waiting for NTP time sync...");
   time_t now = time(nullptr);
   while (now < 24 * 3600) {  // Wait until at least Jan 2, 1970
