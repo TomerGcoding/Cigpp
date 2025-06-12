@@ -6,6 +6,6 @@ public record CigaretteLogResponseDto (
         Long id,
         String userId,
         String description,
-        Instant date
+        Instant timestamp
 ) {
 }

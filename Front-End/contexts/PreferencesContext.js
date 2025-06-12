@@ -12,7 +12,7 @@ export const PreferencesProvider = ({ children }) => {
     currentConsumption: 0,
     targetConsumption: 0,
     enableBluetooth: false,
-    enableNotifications: true,
+    enableNotifications: false,
   });
 
   const [loading, setLoading] = useState(true);
@@ -27,14 +27,10 @@ export const PreferencesProvider = ({ children }) => {
           const storedPreferences = await AsyncStorage.getItem(
             `preferences_${user.uid}`
           );
+          console.log(storedPreferences);
+
           if (storedPreferences) {
             setPreferences(JSON.parse(storedPreferences));
-          } else {
-            // Set default preferences with user's displayName if available
-            setPreferences((prev) => ({
-              ...prev,
-              username: user.displayName || "",
-            }));
           }
         } else {
           // Reset preferences when logged out
@@ -43,7 +39,7 @@ export const PreferencesProvider = ({ children }) => {
             currentConsumption: 0,
             targetConsumption: 0,
             enableBluetooth: false,
-            enableNotifications: true,
+            enableNotifications: false,
             tobaccoBrand: "",
           });
         }
@@ -87,23 +83,24 @@ export const PreferencesProvider = ({ children }) => {
     tobaccoBrand
   ) => {
     try {
+      const initialPreferences = {
+        username,
+        currentConsumption: parseInt(currentConsumption),
+        targetConsumption: parseInt(targetConsumption),
+        tobaccoBrand,
+        enableBluetooth: false,
+        enableNotifications: false,
+      };
+      setPreferences(initialPreferences);
+      console.log(user);
+
       if (user) {
-        const initialPreferences = {
-          username,
-          currentConsumption: parseInt(currentConsumption),
-          targetConsumption: parseInt(targetConsumption),
-          tobaccoBrand,
-          enableBluetooth: false,
-          enableNotifications: true,
-        };
-        setPreferences(initialPreferences);
         await AsyncStorage.setItem(
           `preferences_${user.uid}`,
           JSON.stringify(initialPreferences)
         );
-        return true;
       }
-      return false;
+      return true;
     } catch (error) {
       console.error("Error saving initial preferences:", error);
       return false;

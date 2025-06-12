@@ -16,7 +16,8 @@ const ProgressCircleCard = ({ total, limit, onPress }) => {
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (total / limit) * circumference;
+  const progressRatio = limit > 0 ? Math.min(total / limit, 1) : 0;
+  const strokeDashoffset = circumference - progressRatio * circumference;
 
   const handlePress = (toValue) => {
     Animated.spring(scaleAnim, {
@@ -96,7 +97,6 @@ const styles = StyleSheet.create({
     width: "100%",
     shadowRadius: 16,
     elevation: 4,
-    marginBottom: 5,
   },
   label: {
     fontSize: 16,

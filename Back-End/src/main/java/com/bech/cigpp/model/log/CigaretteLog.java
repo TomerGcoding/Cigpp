@@ -1,4 +1,4 @@
-package com.bech.cigpp.model;
+package com.bech.cigpp.model.log;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -25,6 +25,6 @@ public class CigaretteLog {
 
     private String description;
 
-    private Instant date;
+    private Instant timestamp;
 
 }
