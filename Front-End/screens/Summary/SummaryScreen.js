@@ -18,7 +18,7 @@ const SummaryScreen = () => {
   const { user } = useAuth();
   const [todayCount, setTodayCount] = useState(0);
   const [showTip, setShowTip] = useState(true);
-  const [streakDays, setStreakDays] = useState(3); // Keep hardcoded for now
+  const [streakDays, setStreakDays] = useState(0); // Keep hardcoded for now
   const [isLoading, setIsLoading] = useState(false);
   const [todayLogs, setTodayLogs] = useState([]);
 
@@ -46,6 +46,27 @@ const SummaryScreen = () => {
     if (user?.uid) {
       fetchTodayLogs();
     }
+  }, [user?.uid, fetchTodayLogs]);
+
+  // Auto-refresh every 3 seconds when screen is focused
+  useEffect(() => {
+    let interval;
+
+    const startAutoRefresh = () => {
+      interval = setInterval(() => {
+        if (user?.uid) {
+          fetchTodayLogs();
+        }
+      }, 3000); // Refresh every 3 seconds
+    };
+
+    startAutoRefresh();
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [user?.uid, fetchTodayLogs]);
 
   // Refresh data when screen comes into focus
