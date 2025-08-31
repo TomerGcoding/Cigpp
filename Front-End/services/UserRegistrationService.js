@@ -5,7 +5,7 @@ import {
   deleteUser,
 } from "firebase/auth";
 
-const API_BASE_URL = "http://10.100.102.4:8080/api";
+const API_BASE_URL = "http://10.100.102.9:8080/api";
 
 class UserRegistrationService {
   /**

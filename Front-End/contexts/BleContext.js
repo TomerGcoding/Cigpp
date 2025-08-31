@@ -6,10 +6,12 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { PermissionsAndroid, Platform } from "react-native";
+import { PermissionsAndroid, Platform, Alert } from "react-native";
 import { BleManager } from "react-native-ble-plx";
 import * as ExpoDevice from "expo-device";
 import base64 from "react-native-base64";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import cigaretteLogService from "../services/CigaretteLogService";
 
 // These are the standard Nordic UART Service UUIDs
 const NORDIC_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
@@ -20,19 +22,25 @@ const NORDIC_UART_TX_CHARACTERISTIC = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"; //
 export const BleContext = createContext();
 
 // 2. Create the provider component
-export const BleProvider = ({ children }) => {
+export const BleProvider = ({ children, user }) => {
   const bleManager = useMemo(() => new BleManager(), []);
   const [allDevices, setAllDevices] = useState([]);
   const [connectedDevice, setConnectedDevice] = useState(null);
   const [data, setData] = useState(-1);
   const [isScanning, setIsScanning] = useState(false);
+  const [lastAutomaticLog, setLastAutomaticLog] = useState(null);
 
-  // // Clean up BLE manager on unmount
+  // Clean up BLE manager on unmount
   useEffect(() => {
     return () => {
       bleManager.destroy();
     };
   }, [bleManager]);
+
+  // Debug: Monitor lastAutomaticLog changes
+  useEffect(() => {
+    console.log("lastAutomaticLog state changed to:", lastAutomaticLog);
+  }, [lastAutomaticLog]);
 
   const requestAndroid31Permissions = async () => {
     const bluetoothScanPermission = await PermissionsAndroid.request(
@@ -140,6 +148,57 @@ export const BleProvider = ({ children }) => {
     }
   };
 
+  const handleAutomaticCigaretteLog = async () => {
+    if (!user?.uid) {
+      console.log("No user available for automatic logging");
+      return;
+    }
+
+    // Prevent duplicate logs within 30 seconds
+    const now = new Date();
+    const nowTimestamp = now.getTime();
+    const lastLogTimestamp = lastAutomaticLog ? lastAutomaticLog.getTime() : null;
+    
+    console.log("Current time:", now);
+    console.log("Current timestamp:", nowTimestamp);
+    console.log("Last automatic log time:", lastAutomaticLog);
+    console.log("Last automatic log timestamp:", lastLogTimestamp);
+    
+    if (lastAutomaticLog && (nowTimestamp - lastLogTimestamp) < 30000) {
+      const timeDiff = nowTimestamp - lastLogTimestamp;
+      console.log("Automatic logging blocked - too recent (", timeDiff, "ms, need 30000ms)");
+      return;
+    }
+
+    try {
+      const newLogData = {
+        userId: user.uid,
+        description: "Automatic - Device Triggered",
+        timestamp: now.toISOString(),
+      };
+
+      console.log("Automatic cigarette logging triggered:", newLogData);
+      const createdLog = await cigaretteLogService.addCigaretteLog(newLogData);
+      console.log("Automatic cigarette log created successfully:", createdLog);
+      
+      // Update the last automatic log timestamp
+      setLastAutomaticLog(now);
+      console.log("Updated lastAutomaticLog to:", now);
+      
+      // Show user notification
+      Alert.alert(
+        "Cigarette Logged",
+        "A cigarette was automatically logged from your Cig++ device",
+        [{ text: "OK" }]
+      );
+      
+    } catch (error) {
+      console.error("Error creating automatic cigarette log:", error);
+      // You could add an error callback here if needed
+      // onAutomaticLogError?.(error);
+    }
+  };
+
   const onDataUpdate = (error, characteristic) => {
     if (error) {
       console.log(error);
@@ -152,6 +211,12 @@ export const BleProvider = ({ children }) => {
 
     const rawData = base64.decode(characteristic.value);
     console.log("Raw Data", rawData);
+
+    // Check if the message is the cigarette logged notification
+    if (rawData === "Cigarette_Logged") {
+      console.log("Cigarette logged message received from device");
+      handleAutomaticCigaretteLog();
+    }
 
     setData(rawData);
   };
@@ -198,6 +263,7 @@ export const BleProvider = ({ children }) => {
         data,
         isScanning,
         logCigarette,
+        lastAutomaticLog,
       }}
     >
       {children}

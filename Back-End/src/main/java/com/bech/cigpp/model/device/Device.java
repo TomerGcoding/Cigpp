@@ -1,7 +1,7 @@
 package com.bech.cigpp.model.device;
 
 
-import com.bech.cigpp.model.user.UserProfile;
+import com.bech.cigpp.model.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +21,6 @@ public class Device {
     private String deviceId;
 
     @OneToOne(mappedBy = "device", fetch = FetchType.LAZY)
-    private UserProfile user;
+    private User user;
 
 }

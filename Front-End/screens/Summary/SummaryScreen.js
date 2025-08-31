@@ -57,7 +57,7 @@ const SummaryScreen = () => {
         if (user?.uid) {
           fetchTodayLogs();
         }
-      }, 3000); // Refresh every 3 seconds
+      }, 30000); // Refresh every 3 seconds
     };
 
     startAutoRefresh();

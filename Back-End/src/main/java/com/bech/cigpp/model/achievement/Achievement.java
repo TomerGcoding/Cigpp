@@ -1,42 +1,24 @@
 package com.bech.cigpp.model.achievement;
 
-
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.Instant;
+import lombok.*;
 
 @Entity
 @Table(name = "achievements")
+@Getter
+@Setter
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-@Data
+@AllArgsConstructor
 public class Achievement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long entryId;
+    private Long id;
 
-    @Column(name = "achievement_id", nullable = false)
-    private Long achievementId;
+    private String name;
 
-    @Column(name = "user_id", nullable = false)
-    private String userId;
-
-    @Column(name = "description", nullable = false)
     private String description;
 
-    private Integer progress;
-
-    private Integer target;
-
-    private Boolean completed;
-
-    private Instant startDate;
-
-    private AchievementType achievementType;
+    private String iconName;
 }
