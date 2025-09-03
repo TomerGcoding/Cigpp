@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import CustomClickableIcon from "../../../components/CustomClickableIcon";
 import { Ionicons } from "react-native-vector-icons";
 import { COLOR, FONT } from "../../../constants/theme";
 import { useAuth } from "../../../contexts/AuthContext";
-import cigaretteLogService from "../../../services/CigaretteLogService";
+import CigaretteDataManager from "../../../services/CigaretteDataManager";
 
 const CigarettesLogsModal = ({ navigation }) => {
   const { user } = useAuth();
@@ -25,20 +25,16 @@ const CigarettesLogsModal = ({ navigation }) => {
   const [timeInput, setTimeInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAddingLog, setIsAddingLog] = useState(false);
+  const [syncStatus, setSyncStatus] = useState({});
 
-  // Load logs when component mounts
-  useEffect(() => {
-    fetchLogs();
-  }, [user?.uid]);
-
-  const fetchLogs = async () => {
-    if (!user?.uid) return;
-
+  // Load logs from local storage (instant)
+  const loadLogs = useCallback(async () => {
     setIsLoading(true);
     try {
-      const fetchedLogs = await cigaretteLogService.getTodayLogs(user.uid);
+      const fetchedLogs = await CigaretteDataManager.getTodayLogs();
       const transformedLogs = fetchedLogs.map((log) => ({
-        id: log.id.toString(),
+        id: log.localId,
+        serverId: log.serverId,
         time: new Date(log.timestamp).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -47,17 +43,51 @@ const CigarettesLogsModal = ({ navigation }) => {
         date: new Date(log.timestamp).toISOString().split("T")[0],
         source: log.description || "manual",
         timestamp: new Date(log.timestamp).getTime(),
+        syncStatus: log.syncStatus
       }));
       setLogs(transformedLogs);
     } catch (error) {
-      console.error("Error fetching logs:", error);
+      console.error("Error loading logs:", error);
       setLogs([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleDelete = (id) => {
+  // Load sync status
+  const loadSyncStatus = useCallback(async () => {
+    try {
+      const status = await CigaretteDataManager.getSyncStatus();
+      setSyncStatus(status);
+    } catch (error) {
+      console.error("Error loading sync status:", error);
+    }
+  }, []);
+
+  // Listen to data changes
+  useEffect(() => {
+    const unsubscribe = CigaretteDataManager.addListener((event, data) => {
+      // Reload data when changes occur
+      if (event === 'log_added' || event === 'log_deleted' || event === 'log_updated' || event === 'data_merged') {
+        loadLogs();
+      }
+      
+      // Update sync status
+      if (event.startsWith('sync_')) {
+        loadSyncStatus();
+      }
+    });
+
+    return unsubscribe;
+  }, [loadLogs, loadSyncStatus]);
+
+  // Load logs when component mounts
+  useEffect(() => {
+    loadLogs();
+    loadSyncStatus();
+  }, [loadLogs, loadSyncStatus]);
+
+  const handleDelete = (localId) => {
     Alert.alert("Delete Entry", "Are you sure you want to delete this entry?", [
       {
         text: "Cancel",
@@ -65,20 +95,18 @@ const CigarettesLogsModal = ({ navigation }) => {
       },
       {
         text: "Delete",
-        onPress: () => {
-          setLogs(logs.filter((log) => log.id !== id));
-          cigaretteLogService
-            .deleteCigaretteLog(id)
-            .then(() => {
-              Alert.alert("Success", "Cigarette log deleted successfully!");
-            })
-            .catch((error) => {
-              console.error("Error deleting log:", error);
-              Alert.alert(
-                "Error",
-                "Failed to delete cigarette log. Please try again."
-              );
-            });
+        onPress: async () => {
+          try {
+            // Optimistic update - delete happens immediately
+            await CigaretteDataManager.deleteCigarette(localId);
+            // No need to manually update state - the listener will handle it
+          } catch (error) {
+            console.error("Error deleting log:", error);
+            Alert.alert(
+              "Error",
+              "Failed to delete cigarette log. Please try again."
+            );
+          }
         },
         style: "destructive",
       },
@@ -101,11 +129,6 @@ const CigarettesLogsModal = ({ navigation }) => {
   const addNewLog = async () => {
     if (!timeInput) {
       Alert.alert("Invalid Input", "Please enter a valid time");
-      return;
-    }
-
-    if (!user?.uid) {
-      Alert.alert("Error", "User not authenticated");
       return;
     }
 
@@ -137,32 +160,13 @@ const CigarettesLogsModal = ({ navigation }) => {
       finalDateTime.setSeconds(0);
       finalDateTime.setMilliseconds(0);
 
-      const newLogData = {
-        userId: user.uid,
-        description: "Manual",
-        timestamp: finalDateTime.toISOString(),
-      };
+      // Optimistic update - add happens immediately
+      await CigaretteDataManager.addCigarette("Manual", finalDateTime.toISOString());
 
-      console.log("Sending log data:", newLogData);
-      const createdLog = await cigaretteLogService.addCigaretteLog(newLogData);
-
-      const transformedLog = {
-        id: createdLog.id.toString(),
-        time: new Date(createdLog.timestamp).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }),
-        date: new Date(createdLog.timestamp).toISOString().split("T")[0],
-        source: createdLog.description || "manual",
-        timestamp: new Date(createdLog.timestamp).getTime(),
-      };
-
-      setLogs([transformedLog, ...logs]);
       setAddModalVisible(false);
       setTimeInput("");
+      // No need to manually update state - the listener will handle it
 
-      Alert.alert("Success", "Cigarette log added successfully!");
     } catch (error) {
       console.error("Error adding cigarette log:", error);
       Alert.alert("Error", "Failed to add cigarette log. Please try again.");
@@ -200,10 +204,33 @@ const CigarettesLogsModal = ({ navigation }) => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  // Get sync status icon for a log item
+  const getSyncStatusIcon = (syncStatus) => {
+    switch (syncStatus) {
+      case 'pending':
+        return { name: "time-outline", color: COLOR.orange };
+      case 'failed':
+        return { name: "alert-circle-outline", color: COLOR.red };
+      case 'synced':
+        return { name: "checkmark-circle-outline", color: COLOR.green };
+      default:
+        return { name: "help-circle-outline", color: COLOR.subPrimary };
+    }
+  };
+
   const renderLogItem = ({ item }) => (
     <View style={styles.logItem}>
       <View style={styles.logInfo}>
-        <Text style={styles.timeText}>{item.time}</Text>
+        <View style={styles.timeContainer}>
+          <Text style={styles.timeText}>{item.time}</Text>
+          {/* Sync Status Indicator */}
+          <Ionicons
+            name={getSyncStatusIcon(item.syncStatus).name}
+            size={16}
+            color={getSyncStatusIcon(item.syncStatus).color}
+            style={{ marginLeft: 8 }}
+          />
+        </View>
         <View style={styles.sourceContainer}>
           <Ionicons
             name={
@@ -512,6 +539,10 @@ const styles = StyleSheet.create({
   },
   logInfo: {
     flex: 1,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   timeText: {
     fontSize: 18,
