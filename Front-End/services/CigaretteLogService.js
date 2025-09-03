@@ -1,6 +1,6 @@
 import { FIREBASE_AUTH } from "../config/firebase/firebaseConfig";
 
-const API_BASE_URL = "http://10.100.102.9:8080/api";
+const API_BASE_URL = "http://10.100.102.7:8080/api";
 
 class CigaretteLogService {
   async addCigaretteLog(log) {

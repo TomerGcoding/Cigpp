@@ -1,5 +1,7 @@
 package com.bech.cigpp.service.impl;
 
+import com.bech.cigpp.controller.dto.achievement.AchievementDto;
+import com.bech.cigpp.controller.dto.achievement.UserAchievementResponseDto;
 import com.bech.cigpp.model.achievement.Achievement;
 import com.bech.cigpp.model.achievement.UserAchievement;
 import com.bech.cigpp.model.log.CigaretteLog;
@@ -15,9 +17,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AchievementServiceImpl implements AchievementService {
@@ -74,8 +76,8 @@ public class AchievementServiceImpl implements AchievementService {
                     }
                     break;
 
-                case "Weekly Warrior":
-                    progress = calculateConsecutiveTrackingDays(userId);
+                case "Balanced Week":
+                    progress = calculateConsecutiveDaysBelowTarget(userId);
                     if (progress >= 7) {
                         completed = true;
                     }
@@ -108,6 +110,15 @@ public class AchievementServiceImpl implements AchievementService {
                         progress = 1;
                     }
                     break;
+
+                case "Master Achiever": // New achievement case
+                    progress = calculateCompletedAchievements(userId);
+                    // Check if all OTHER achievements are completed (6 out of 7 total, excluding Master Achiever itself)
+                    if (progress >= 6) {
+                        completed = true;
+                    }
+                    break;
+
             }
 
             userAchievement.setProgress(progress);
@@ -120,23 +131,44 @@ public class AchievementServiceImpl implements AchievementService {
         }
     }
 
-    private int calculateConsecutiveTrackingDays(String userId) {
+    private int calculateConsecutiveDaysBelowTarget(String userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null || user.getTargetConsumption() == null || user.getTargetConsumption() <= 0) {
+            return 0; // No target set, can't calculate
+        }
+        int targetConsumption = user.getTargetConsumption();
+        
         List<CigaretteLog> logs = cigaretteLogRepository.findByUserIdOrderByTimestampDesc(userId);
         if (logs.isEmpty()) {
             return 0;
         }
 
+        // Group logs by date and count per day
+        Map<LocalDate, Long> dailyCounts = logs.stream()
+                .collect(Collectors.groupingBy(
+                        log -> log.getTimestamp().atZone(ZoneId.systemDefault()).toLocalDate(),
+                        Collectors.counting()
+                ));
+
         LocalDate today = LocalDate.now();
-        LocalDate currentDay = today;
+        LocalDate currentDay = today.minusDays(1); // Start from yesterday (completed days only)
         int consecutiveDays = 0;
 
-        for (CigaretteLog log : logs) {
-            LocalDate logDate = log.getTimestamp().atZone(ZoneId.systemDefault()).toLocalDate();
+        // Count backwards from yesterday
+        while (true) {
+            Long dayCount = dailyCounts.get(currentDay);
 
-            if (logDate.equals(currentDay)) {
+            if (dayCount == null) {
+                // No tracking on this day, break the streak
+                break;
+            }
+
+            if (dayCount <= targetConsumption) {
                 consecutiveDays++;
                 currentDay = currentDay.minusDays(1);
-            } else if (logDate.isBefore(currentDay)) {
+            } else {
+                // Exceeded target on this day, break the streak
+                consecutiveDays = 0;
                 break;
             }
         }
@@ -145,14 +177,18 @@ public class AchievementServiceImpl implements AchievementService {
     }
 
     private boolean hasLightDay(String userId) {
-        LocalDate today = LocalDate.now();
-        Instant startOfDay = today.atStartOfDay(ZoneId.systemDefault()).toInstant();
-        Instant endOfDay = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-        long dailyCount = cigaretteLogRepository.countByUserIdAndTimestampBetween(userId, startOfDay, endOfDay);
-        if (dailyCount <= 5) {
-            return true;
-        }
-        return false;
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+
+        // Get start and end of yesterday
+        Instant startOfYesterday = yesterday.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Instant endOfYesterday = yesterday.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+        // Count cigarettes smoked yesterday
+        long yesterdayCount = cigaretteLogRepository.countByUserIdAndTimestampBetween(
+                userId, startOfYesterday, endOfYesterday
+        );
+
+        return yesterdayCount > 0 && yesterdayCount <= 5;
     }
 
     private int calculateTotalTrackingDays(String userId) {
@@ -179,50 +215,94 @@ public class AchievementServiceImpl implements AchievementService {
         return false;
     }
 
+    private int calculateCompletedAchievements(String userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return 0;
+        }
+
+        List<UserAchievement> userAchievements = userAchievementRepository.findAllByUser(user);
+
+        // Count completed achievements, excluding "Master Achiever" itself
+        return (int) userAchievements.stream()
+                .filter(ua -> ua.getIsCompleted() && !"Master Achiever".equals(ua.getAchievement().getName()))
+                .count();
+    }
+
     @Override
     public String populateAchievementList() {
         Achievement firstStep = Achievement.builder()
                 .name("First Step")
-                .description("Log your first cigarette - beginning your tracking journey")
-                .iconName("first_step")
+                .description("Track your first cigarette - beginning your tracking journey")
+                .iconName("flag-outline")
                 .build();
         achievementRepository.save(firstStep);
 
         Achievement weeklyTracker = Achievement.builder()
-                .name("Weekly Warrior")
-                .description("Track your cigarettes for 7 consecutive days")
-                .iconName("calendar_week")
+                .name("Balanced Week")
+                .description("7 consecutive days below your daily target")
+                .iconName("calendar-outline")
                 .build();
         achievementRepository.save(weeklyTracker);
 
         Achievement lightSmoker = Achievement.builder()
                 .name("Light Day")
                 .description("Have a day with 5 or fewer cigarettes")
-                .iconName("light_smoke")
+                .iconName("cloud-outline")
                 .build();
         achievementRepository.save(lightSmoker);
 
         Achievement monthlyMilestone = Achievement.builder()
                 .name("Monthly Milestone")
                 .description("Complete 30 days of tracking your smoking habits")
-                .iconName("trophy")
+                .iconName("trophy-outline")
                 .build();
         achievementRepository.save(monthlyMilestone);
 
         Achievement selfAware = Achievement.builder()
                 .name("Self Aware")
-                .description("Log 100 cigarettes - showing commitment to understanding your habits")
-                .iconName("awareness")
+                .description("Track 100 cigarettes - showing commitment to understanding your habits")
+                .iconName("bulb-outline")
                 .build();
         achievementRepository.save(selfAware);
 
         Achievement cleanDay = Achievement.builder()
                 .name("Clean Day")
                 .description("A full day without smoking")
-                .iconName("cleanDay")
+                .iconName("leaf-outline")
                 .build();
         achievementRepository.save(cleanDay);
 
-        return "Successfully populated achievement list with 6 achievements";
+        Achievement masterAchiever = Achievement.builder()
+                .name("Master Achiever")
+                .description("Complete all other achievements")
+                .iconName("star-outline")
+                .build();
+        achievementRepository.save(masterAchiever);
+
+
+        return "Successfully populated achievement list with 7 achievements";
     }
-}
+
+    @Override
+    public List<UserAchievementResponseDto> getUserAchievements(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        List<UserAchievement> userAchievements = userAchievementRepository.findAllByUser(user);
+
+        return userAchievements.stream()
+                .map(ua -> new UserAchievementResponseDto(
+                        ua.getId(),
+                        new AchievementDto(
+                                ua.getAchievement().getId(),
+                                ua.getAchievement().getName(),
+                                ua.getAchievement().getDescription(),
+                                ua.getAchievement().getIconName()
+                        ),
+                        ua.getEarnedAt(),
+                        ua.getProgress(),
+                        ua.getIsCompleted()
+                ))
+                .collect(Collectors.toList());
+    }}

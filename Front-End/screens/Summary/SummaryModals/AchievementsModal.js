@@ -1,123 +1,102 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Image,
   ScrollView,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "react-native-vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import CustomClickableIcon from "../../../components/CustomClickableIcon";
 import { COLOR, FONT } from "../../../constants/theme";
-
-// Sample achievement data - replace with your actual achievements
-const achievementsData = [
-  {
-    id: "1",
-    title: "Clean Day",
-    description: "A full day without smoking",
-    icon: "leaf-outline",
-    unlocked: true,
-    date: "2024-03-15",
-    progress: 1,
-    total: 1,
-  },
-  {
-    id: "2",
-    title: "Balanced Week",
-    description: "7 consecutive days below your daily target",
-    icon: "calendar-outline",
-    unlocked: false,
-    progress: 5,
-    total: 7,
-  },
-  {
-    id: "3",
-    title: "Significant Reduction",
-    description: "Reduced your daily cigarette count by 50%",
-    icon: "trending-down-outline",
-    unlocked: true,
-    date: "2024-03-10",
-    progress: 1,
-    total: 1,
-  },
-  {
-    id: "4",
-    title: "Money Saver",
-    description: "Saved $100 on cigarette expenses",
-    icon: "wallet-outline",
-    unlocked: false,
-    progress: 64,
-    total: 100,
-  },
-  {
-    id: "5",
-    title: "Consistent Tracker",
-    description: "30 days of continuous tracking",
-    icon: "trophy-outline",
-    unlocked: false,
-    progress: 12,
-    total: 30,
-  },
-  {
-    id: "6",
-    title: "Weekend Warrior",
-    description: "A Saturday without smoking",
-    icon: "sunny-outline",
-    unlocked: false,
-    progress: 0,
-    total: 1,
-  },
-  {
-    id: "7",
-    title: "Good Start",
-    description: "Logged your first cigarette",
-    icon: "flag-outline",
-    unlocked: true,
-    date: "2024-02-28",
-    progress: 1,
-    total: 1,
-  },
-  {
-    id: "8",
-    title: "Master Achiever",
-    description: "Complete all other achievements",
-    icon: "star-outline",
-    unlocked: false,
-    progress: 3,
-    total: 7,
-  },
-];
+import { useAuth } from "../../../contexts/AuthContext";
+import AchievementService from "../../../services/AchievementsService";
 
 const AchievementsModal = ({ navigation }) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
+  const [achievements, setAchievements] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch achievements from backend
+  const fetchAchievements = useCallback(async () => {
+    if (!user?.uid) return;
+
+    try {
+      setIsLoading(true);
+      const userAchievements = await AchievementService.getUserAchievements(
+        user.uid
+      );
+      setAchievements(userAchievements);
+    } catch (error) {
+      console.error("Error fetching achievements:", error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.uid]);
+
+  // Refresh achievements (pull to refresh)
+  const onRefresh = useCallback(async () => {
+    if (!user?.uid) return;
+
+    try {
+      setRefreshing(true);
+      // First recalculate achievements to ensure they're up to date
+      await AchievementService.recalculateAchievements(user.uid);
+      // Then fetch the updated achievements
+      await fetchAchievements();
+    } catch (error) {
+      console.error("Error refreshing achievements:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user?.uid, fetchAchievements]);
+
+  // Load achievements when component mounts or user changes
+  useEffect(() => {
+    if (user?.uid) {
+      fetchAchievements();
+    }
+  }, [user?.uid, fetchAchievements]);
+
+  // Refresh achievements when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        fetchAchievements();
+      }
+    }, [user?.uid, fetchAchievements])
+  );
 
   // Filter achievements based on active tab
   const filteredAchievements = () => {
     if (activeTab === "completed") {
-      return achievementsData.filter((achievement) => achievement.unlocked);
+      return achievements.filter((achievement) => achievement.unlocked);
     } else if (activeTab === "inProgress") {
-      return achievementsData.filter(
+      return achievements.filter(
         (achievement) => !achievement.unlocked && achievement.progress > 0
       );
-    } else if (activeTab === "locked") {
-      return achievementsData.filter(
-        (achievement) => !achievement.unlocked && achievement.progress === 0
-      );
     }
-    return achievementsData;
+    return achievements;
   };
 
   // Calculate overall achievement progress
   const overallProgress = () => {
-    const completed = achievementsData.filter((a) => a.unlocked).length;
+    const completed = achievements.filter((a) => a.unlocked).length;
     return {
       completed,
-      total: achievementsData.length,
-      percentage: Math.round((completed / achievementsData.length) * 100),
+      total: achievements.length,
+      percentage:
+        achievements.length > 0
+          ? Math.round((completed / achievements.length) * 100)
+          : 0,
     };
   };
 
@@ -136,12 +115,7 @@ const AchievementsModal = ({ navigation }) => {
     );
 
     return (
-      <View
-        style={[
-          styles.achievementCard,
-          !item.unlocked && styles.achievementCardLocked,
-        ]}
-      >
+      <View style={styles.achievementCard}>
         <View style={styles.achievementHeader}>
           <View
             style={[
@@ -195,6 +169,27 @@ const AchievementsModal = ({ navigation }) => {
     );
   };
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <CustomClickableIcon
+            onPress={() => navigation.goBack()}
+            color={COLOR.primary}
+            size={30}
+            name="arrow-back"
+          />
+          <Text style={styles.title}>Achievements</Text>
+          <View style={{ width: 30 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLOR.primary} />
+          <Text style={styles.loadingText}>Loading achievements...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -205,7 +200,9 @@ const AchievementsModal = ({ navigation }) => {
           name="arrow-back"
         />
         <Text style={styles.title}>Achievements</Text>
-        <View style={{ width: 30 }} />
+        <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
+          <Ionicons name="refresh" size={24} color={COLOR.primary} />
+        </TouchableOpacity>
       </View>
 
       {/* Overall Progress */}
@@ -222,7 +219,7 @@ const AchievementsModal = ({ navigation }) => {
           <Text style={styles.progressDetails}>
             Completed {progress.completed} out of {progress.total} achievements
           </Text>
-          {progress.completed === progress.total ? (
+          {progress.completed === progress.total && progress.total > 0 ? (
             <Text style={styles.congratsText}>
               Congratulations! You've completed all achievements!
             </Text>
@@ -234,13 +231,12 @@ const AchievementsModal = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs - Removed "locked" tab */}
       <View style={styles.tabContainer}>
         {[
           { id: "all", label: "All" },
           { id: "completed", label: "Completed" },
           { id: "inProgress", label: "In Progress" },
-          { id: "locked", label: "Locked" },
         ].map((tab) => (
           <TouchableOpacity
             key={tab.id}
@@ -269,12 +265,25 @@ const AchievementsModal = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLOR.primary]}
+            tintColor={COLOR.primary}
+          />
+        }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="trophy-outline" size={60} color="#d0d0d0" />
             <Text style={styles.emptyText}>
               No achievements in this category
             </Text>
+            {achievements.length === 0 && (
+              <Text style={styles.emptySubtext}>
+                Start tracking your cigarettes to unlock achievements!
+              </Text>
+            )}
           </View>
         )}
       />
@@ -297,6 +306,20 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontFamily: FONT.bold,
+    color: COLOR.primary,
+  },
+  refreshButton: {
+    padding: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    fontFamily: FONT.regular,
     color: COLOR.primary,
   },
   overallContainer: {
@@ -395,9 +418,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  achievementCardLocked: {
-    opacity: 0.8,
-  },
   achievementHeader: {
     flexDirection: "row",
     marginBottom: 15,
@@ -467,6 +487,14 @@ const styles = StyleSheet.create({
     fontFamily: FONT.semiBold,
     color: COLOR.subPrimary,
     marginTop: 10,
+    textAlign: "center",
+  },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: COLOR.subPrimary,
+    marginTop: 5,
+    textAlign: "center",
   },
 });
 

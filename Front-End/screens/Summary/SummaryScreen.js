@@ -11,6 +11,7 @@ import CustomClickableIcon from "../../components/CustomClickableIcon";
 import ProgressCircleCard from "../../components/ProgressCircleCard";
 import CustomButton from "../../components/CustomButton";
 import cigaretteLogService from "../../services/CigaretteLogService";
+import AchievementService from "../../services/AchievementsService";
 
 const SummaryScreen = () => {
   const navigation = useNavigation();
@@ -48,7 +49,7 @@ const SummaryScreen = () => {
     }
   }, [user?.uid, fetchTodayLogs]);
 
-  // Auto-refresh every 3 seconds when screen is focused
+  // Auto-refresh every 60 seconds when screen is focused
   useEffect(() => {
     let interval;
 
@@ -57,7 +58,7 @@ const SummaryScreen = () => {
         if (user?.uid) {
           fetchTodayLogs();
         }
-      }, 30000); // Refresh every 3 seconds
+      }, 60000); // Refresh every 60 seconds
     };
 
     startAutoRefresh();
