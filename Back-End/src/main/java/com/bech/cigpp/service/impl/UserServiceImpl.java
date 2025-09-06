@@ -1,33 +1,33 @@
 package com.bech.cigpp.service.impl;
 
-import com.bech.cigpp.controller.dto.user.UserProfileDto;
+import com.bech.cigpp.controller.dto.user.UserDto;
 import com.bech.cigpp.model.device.Device;
-import com.bech.cigpp.model.user.UserProfile;
+import com.bech.cigpp.model.user.User;
 import com.bech.cigpp.repository.DeviceRepository;
-import com.bech.cigpp.service.api.UserProfileService;
-import com.bech.cigpp.repository.UserProfileRepository;
+import com.bech.cigpp.service.api.UserService;
+import com.bech.cigpp.repository.UserRepository;
 import com.bech.cigpp.util.UserProfileMapper;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UserProfileServiceImpl implements UserProfileService {
+public class UserServiceImpl implements UserService {
 
-    private final UserProfileRepository userProfileRepository;
+    private final UserRepository userRepository;
     private final DeviceRepository deviceRepository;
 
-    public UserProfileServiceImpl(UserProfileRepository userProfileRepository, DeviceRepository deviceRepository) {
-        this.userProfileRepository = userProfileRepository;
+    public UserServiceImpl(UserRepository userRepository, DeviceRepository deviceRepository) {
+        this.userRepository = userRepository;
         this.deviceRepository = deviceRepository;
     }
 
     @Override
-    public UserProfileDto addUserProfile(UserProfileDto dto) {
+    public UserDto addUser(UserDto dto) {
         Device device = deviceRepository.findById(dto.deviceId())
                 .orElseThrow(() -> new IllegalArgumentException("Device ID not found: " + dto.deviceId()));
         if(device.getUser()!= null){
             throw new IllegalStateException("Device already has an associated user");
         }
-        UserProfile newUser= UserProfile.builder()
+        User newUser= User.builder()
                 .userId(dto.userId())
                 .currentConsumption(dto.currentConsumption())
                 .targetConsumption(dto.targetConsumption())
@@ -38,33 +38,33 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .device(device)
                 .build();
 
-        UserProfile savedUserProfile = userProfileRepository.save(newUser);
+        User savedUser = userRepository.save(newUser);
 
-        if (savedUserProfile == null) {
+        if (savedUser == null) {
             throw new RuntimeException("Failed to save user profile");
         }
 
 //        device.setUser(savedUserProfile);
 //        deviceRepository.save(device);
 
-        return UserProfileMapper.toDto(savedUserProfile);
+        return UserProfileMapper.toDto(savedUser);
 
     }
 
     @Override
-    public UserProfileDto getUserProfile(String userId) {
+    public UserDto getUser(String userId) {
         // Logic to get user profile by userId
         return null; // Replace with actual implementation
     }
 
     @Override
-    public UserProfileDto updateUserProfile(String userId, UserProfileDto dto) {
+    public UserDto updateUser(String userId, UserDto dto) {
         // Logic to update user profile by userId
         return null; // Replace with actual implementation
     }
 
     @Override
-    public void deleteUserProfile(String userId) {
+    public void deleteUser(String userId) {
         // Logic to delete user profile by userId
     }
 }

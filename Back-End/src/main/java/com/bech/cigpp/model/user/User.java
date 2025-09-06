@@ -8,15 +8,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Entity
 @Table(name = "user_profile")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserProfile {
+public class User {
 
     @Id
     private String userId;

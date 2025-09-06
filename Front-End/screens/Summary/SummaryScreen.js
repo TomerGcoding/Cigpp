@@ -9,8 +9,7 @@ import styles from "./SummaryStyle";
 import TouchableBox from "../../components/TouchableBox";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
 import ProgressCircleCard from "../../components/ProgressCircleCard";
-import CustomButton from "../../components/CustomButton";
-import cigaretteLogService from "../../services/CigaretteLogService";
+import CigaretteDataManager from "../../services/CigaretteDataManager";
 
 const SummaryScreen = () => {
   const navigation = useNavigation();
@@ -19,63 +18,77 @@ const SummaryScreen = () => {
   const [todayCount, setTodayCount] = useState(0);
   const [showTip, setShowTip] = useState(true);
   const [streakDays, setStreakDays] = useState(0); // Keep hardcoded for now
-  const [isLoading, setIsLoading] = useState(false);
   const [todayLogs, setTodayLogs] = useState([]);
+  const [syncStatus, setSyncStatus] = useState({});
 
-  // Fetch today's logs function
-  const fetchTodayLogs = useCallback(async () => {
-    if (!user?.uid) return;
-
-    setIsLoading(true);
-    try {
-      const logs = await cigaretteLogService.getTodayLogs(user.uid);
-      setTodayLogs(logs);
-      setTodayCount(logs.length);
-      console.log("Today's logs fetched:", logs.length);
-    } catch (error) {
-      console.error("Error fetching today's logs:", error);
-      setTodayLogs([]);
-      setTodayCount(0);
-    } finally {
-      setIsLoading(false);
+  // Initialize data manager when user changes
+  useEffect(() => {
+    if (user?.uid) {
+      CigaretteDataManager.initialize(user.uid);
+    } else {
+      CigaretteDataManager.cleanup();
     }
   }, [user?.uid]);
 
-  // Load data on component mount and when user changes
+  // Load today's data from local storage (instant)
+  const loadTodayData = useCallback(async () => {
+    try {
+      const logs = await CigaretteDataManager.getTodayLogs();
+      setTodayLogs(logs);
+      setTodayCount(logs.length);
+      console.log("Today's logs loaded from local:", logs.length);
+    } catch (error) {
+      console.error("Error loading today's data:", error);
+      setTodayLogs([]);
+      setTodayCount(0);
+    }
+  }, []);
+
+  // Load sync status
+  const loadSyncStatus = useCallback(async () => {
+    try {
+      const status = await CigaretteDataManager.getSyncStatus();
+      setSyncStatus(status);
+    } catch (error) {
+      console.error("Error loading sync status:", error);
+    }
+  }, []);
+
+  // Listen to data changes from the data manager
+  useEffect(() => {
+    const unsubscribe = CigaretteDataManager.addListener((event, data) => {
+      console.log('SummaryScreen received event:', event, data);
+      
+      // Reload data when local data changes
+      if (event === 'log_added' || event === 'log_deleted' || event === 'data_merged') {
+        loadTodayData();
+      }
+      
+      // Update sync status
+      if (event.startsWith('sync_')) {
+        loadSyncStatus();
+      }
+    });
+
+    return unsubscribe;
+  }, [loadTodayData, loadSyncStatus]);
+
+  // Load initial data when component mounts or user changes
   useEffect(() => {
     if (user?.uid) {
-      fetchTodayLogs();
+      loadTodayData();
+      loadSyncStatus();
     }
-  }, [user?.uid, fetchTodayLogs]);
-
-  // Auto-refresh every 3 seconds when screen is focused
-  useEffect(() => {
-    let interval;
-
-    const startAutoRefresh = () => {
-      interval = setInterval(() => {
-        if (user?.uid) {
-          fetchTodayLogs();
-        }
-      }, 3000); // Refresh every 3 seconds
-    };
-
-    startAutoRefresh();
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [user?.uid, fetchTodayLogs]);
+  }, [user?.uid, loadTodayData, loadSyncStatus]);
 
   // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       if (user?.uid) {
-        fetchTodayLogs();
+        loadTodayData();
+        loadSyncStatus();
       }
-    }, [user?.uid, fetchTodayLogs])
+    }, [user?.uid, loadTodayData, loadSyncStatus])
   );
 
   // Get motivational message based on progress
@@ -101,6 +114,19 @@ const SummaryScreen = () => {
     }
   };
 
+  // Get sync status indicator
+  const getSyncStatusIcon = () => {
+    if (syncStatus.isSyncing) {
+      return { name: "sync", color: COLOR.orange };
+    } else if (!syncStatus.isOnline) {
+      return { name: "cloud-offline", color: COLOR.red };
+    } else if (syncStatus.stats?.pending > 0) {
+      return { name: "time-outline", color: COLOR.orange };
+    } else {
+      return { name: "cloud-done", color: COLOR.green };
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -109,6 +135,23 @@ const SummaryScreen = () => {
           <Text style={styles.titleText}>Summary</Text>
         </View>
         <View style={styles.headerRightContainer}>
+          {/* Sync Status Indicator */}
+          <TouchableOpacity 
+            onPress={async () => {
+              try {
+                await CigaretteDataManager.forceSync();
+              } catch (error) {
+                Alert.alert("Sync Error", error.message);
+              }
+            }}
+            style={{ marginRight: 10 }}
+          >
+            <Ionicons 
+              name={getSyncStatusIcon().name}
+              size={24}
+              color={getSyncStatusIcon().color}
+            />
+          </TouchableOpacity>
           <CustomClickableIcon
             onPress={() => navigation.navigate("Profile")}
             color={COLOR.primary}
@@ -150,6 +193,13 @@ const SummaryScreen = () => {
             height={100}
           />
           <TouchableBox
+              title="Achievements"
+              subtitle="Celebrate your smoke-free wins"
+              icon="trophy-outline"
+              onPress={() => navigation.navigate("Achievements")}
+              height={100}
+          />
+          <TouchableBox
             title="My Device"
             subtitle="Connect or manage your tracker"
             icon="watch-outline"
@@ -157,13 +207,7 @@ const SummaryScreen = () => {
             height={100}
           />
 
-          <TouchableBox
-            title="Achievements"
-            subtitle="Celebrate your smoke-free wins"
-            icon="trophy-outline"
-            onPress={() => navigation.navigate("Achievements")}
-            height={100}
-          />
+
         </View>
       </View>
     </ScrollView>

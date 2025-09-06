@@ -1,7 +1,7 @@
 package com.bech.cigpp.controller.dto.user;
 
 
-public record UserProfileDto(
+public record UserDto(
         String userId,
         String username,
         String deviceId,
