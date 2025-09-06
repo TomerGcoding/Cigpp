@@ -57,7 +57,7 @@ const BTModal = () => {
         />
       </View>
       <Text style={styles.description}>
-        Turn on Bluetooth to connect with you Cig++ smart case.
+        Turn on Bluetooth to connect with your Cig++ smart case.
       </Text>
       {isModalVisible && (
         <CustomButton title={"Scan For Devices"} onPress={handleScan} />
@@ -81,15 +81,9 @@ const BTModal = () => {
           <Text style={styles.scanText}>
             Connected to: {connectedDevice.name}
           </Text>
-          <Text style={styles.scanText}>Data: {data}</Text>
           <CustomButton
             onPress={() => disconnectFromDevice()}
             title="Disconnect"
-          />
-          <CustomButton
-            title={"Log Cigarette"}
-            style={{ marginTop: 10 }}
-            onPress={() => logCigarette()}
           />
         </View>
       )}

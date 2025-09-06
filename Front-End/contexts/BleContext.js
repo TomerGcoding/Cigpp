@@ -11,7 +11,7 @@ import { BleManager } from "react-native-ble-plx";
 import * as ExpoDevice from "expo-device";
 import base64 from "react-native-base64";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import cigaretteLogService from "../services/CigaretteLogService";
+import CigaretteDataManager from "../services/CigaretteDataManager";
 
 // These are the standard Nordic UART Service UUIDs
 const NORDIC_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
@@ -171,26 +171,13 @@ export const BleProvider = ({ children, user }) => {
     }
 
     try {
-      const newLogData = {
-        userId: user.uid,
-        description: "Automatic - Device Triggered",
-        timestamp: now.toISOString(),
-      };
-
-      console.log("Automatic cigarette logging triggered:", newLogData);
-      const createdLog = await cigaretteLogService.addCigaretteLog(newLogData);
+      console.log("Automatic cigarette logging triggered");
+      const createdLog = await CigaretteDataManager.addCigarette("Device", now.toISOString());
       console.log("Automatic cigarette log created successfully:", createdLog);
       
       // Update the last automatic log timestamp
       setLastAutomaticLog(now);
       console.log("Updated lastAutomaticLog to:", now);
-      
-      // Show user notification
-      Alert.alert(
-        "Cigarette Logged",
-        "A cigarette was automatically logged from your Cig++ device",
-        [{ text: "OK" }]
-      );
       
     } catch (error) {
       console.error("Error creating automatic cigarette log:", error);
