@@ -24,6 +24,9 @@ class CigaretteDataManager {
       // Handle specific sync events
       if (event === 'app_became_active' && this.currentUserId) {
         SyncManager.syncNow(this.currentUserId);
+      } else if (event === 'should_sync_now' && this.currentUserId) {
+        // Handle automatic sync triggers that don't have userId
+        SyncManager.syncNow(this.currentUserId);
       }
     });
   }

@@ -29,7 +29,7 @@ class SyncManager {
       if (wasOffline && this.isOnline) {
         // Just came back online, trigger immediate sync
         this.notifyListeners('network_restored');
-        this.syncNow();
+        this.notifyListeners('should_sync_now');
       } else if (!this.isOnline && !wasOffline) {
         this.notifyListeners('network_lost');
       }
@@ -92,14 +92,11 @@ class SyncManager {
 
     this.syncInterval = setInterval(() => {
       if (this.isOnline && !this.isSyncing) {
-        this.syncNow();
+        this.notifyListeners('should_sync_now');
       }
     }, this.syncIntervalTime);
 
-    // Initial sync
-    if (this.isOnline) {
-      this.syncNow();
-    }
+    // Initial sync will be triggered by the coordinator
   }
 
   // Stop automatic sync
