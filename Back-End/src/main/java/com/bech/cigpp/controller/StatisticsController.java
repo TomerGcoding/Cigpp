@@ -17,12 +17,6 @@ public class StatisticsController {
         this.statisticsService = statisticsService;
     }
 
-    @GetMapping("/daily/{userId}")
-    public ResponseEntity<List<DailyStatsDto>> getDailyStats(@PathVariable String userId) {
-        List<DailyStatsDto> stats = statisticsService.getDailyStats(userId);
-        return ResponseEntity.ok(stats);
-    }
-
     @GetMapping("/weekly/{userId}")
     public ResponseEntity<List<WeeklyStatsDto>> getWeeklyStats(@PathVariable String userId) {
         List<WeeklyStatsDto> stats = statisticsService.getWeeklyStats(userId);
@@ -35,11 +29,26 @@ public class StatisticsController {
         return ResponseEntity.ok(stats);
     }
 
+    @GetMapping("/yearly/{userId}")
+    public ResponseEntity<List<YearlyStatsDto>> getYearlyStats(@PathVariable String userId) {
+        List<YearlyStatsDto> stats = statisticsService.getYearlyStats(userId);
+        return ResponseEntity.ok(stats);
+    }
+
     @GetMapping("/summary/{userId}")
     public ResponseEntity<StatsSummaryDto> getStatsSummary(
             @PathVariable String userId,
             @RequestParam String period) {
         StatsSummaryDto summary = statisticsService.getStatsSummary(userId, period);
         return ResponseEntity.ok(summary);
+    }
+
+    @GetMapping("/trends/{userId}")
+    public ResponseEntity<TrendDataDto> getTrendData(
+            @PathVariable String userId,
+            @RequestParam String period,
+            @RequestParam Integer targetConsumption) {
+        TrendDataDto trends = statisticsService.getTrendData(userId, period, targetConsumption);
+        return ResponseEntity.ok(trends);
     }
 }

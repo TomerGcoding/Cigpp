@@ -9,9 +9,6 @@ import styles from "./SummaryStyle";
 import TouchableBox from "../../components/TouchableBox";
 import CustomClickableIcon from "../../components/CustomClickableIcon";
 import ProgressCircleCard from "../../components/ProgressCircleCard";
-import CustomButton from "../../components/CustomButton";
-import cigaretteLogService from "../../services/CigaretteLogService";
-import AchievementService from "../../services/AchievementsService";
 import CigaretteDataManager from "../../services/CigaretteDataManager";
 
 const SummaryScreen = () => {
@@ -196,6 +193,13 @@ const SummaryScreen = () => {
             height={100}
           />
           <TouchableBox
+              title="Achievements"
+              subtitle="Celebrate your smoke-free wins"
+              icon="trophy-outline"
+              onPress={() => navigation.navigate("Achievements")}
+              height={100}
+          />
+          <TouchableBox
             title="My Device"
             subtitle="Connect or manage your tracker"
             icon="watch-outline"
@@ -203,13 +207,7 @@ const SummaryScreen = () => {
             height={100}
           />
 
-          <TouchableBox
-            title="Achievements"
-            subtitle="Celebrate your smoke-free wins"
-            icon="trophy-outline"
-            onPress={() => navigation.navigate("Achievements")}
-            height={100}
-          />
+
         </View>
       </View>
     </ScrollView>

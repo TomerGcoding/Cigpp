@@ -1,39 +1,6 @@
 import { API_BASE_URL } from "../config/firebase/apiConfig";
 
 class StatisticsService {
-  async getDailyStats(userId) {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/statistics/daily/${userId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch daily stats");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching daily stats:", error);
-      // Return fallback data
-      return [
-        { hour: "12AM", count: 0 },
-        { hour: "3AM", count: 0 },
-        { hour: "6AM", count: 1 },
-        { hour: "9AM", count: 1 },
-        { hour: "12PM", count: 1 },
-        { hour: "3PM", count: 2 },
-        { hour: "6PM", count: 1 },
-        { hour: "9PM", count: 1 },
-      ];
-    }
-  }
-
   async getWeeklyStats(userId) {
     try {
       const response = await fetch(
@@ -95,6 +62,43 @@ class StatisticsService {
     }
   }
 
+  async getYearlyStats(userId) {
+    try {
+      const response = await fetch(
+          `${API_BASE_URL}/statistics/yearly/${userId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch yearly stats");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching yearly stats:", error);
+      // Return fallback data
+      return [
+        { month: "Jan", count: 45 },
+        { month: "Feb", count: 38 },
+        { month: "Mar", count: 42 },
+        { month: "Apr", count: 35 },
+        { month: "May", count: 28 },
+        { month: "Jun", count: 25 },
+        { month: "Jul", count: 30 },
+        { month: "Aug", count: 33 },
+        { month: "Sep", count: 27 },
+        { month: "Oct", count: 24 },
+        { month: "Nov", count: 20 },
+        { month: "Dec", count: 18 },
+      ];
+    }
+  }
+
   async getStatsSummary(userId, period) {
     try {
       const response = await fetch(
@@ -124,6 +128,34 @@ class StatisticsService {
         dateRange: new Date().toLocaleDateString(),
         bestInsight: "No data available yet",
         worstInsight: "Start tracking to see insights",
+      };
+    }
+  }
+
+  async getTrendData(userId, period, targetConsumption) {
+    try {
+      const response = await fetch(
+          `${API_BASE_URL}/statistics/trends/${userId}?period=${period}&targetConsumption=${targetConsumption}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch trend data");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching trend data:", error);
+      // Return fallback data
+      return {
+        percentageChange: 0,
+        daysBelow: 0,
+        peakPeriod: period === 'weekly' ? 'Fri' : period === 'monthly' ? 'Week 3' : 'Mar'
       };
     }
   }
