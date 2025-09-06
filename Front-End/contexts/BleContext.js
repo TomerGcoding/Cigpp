@@ -29,6 +29,7 @@ export const BleProvider = ({ children, user }) => {
   const [data, setData] = useState(-1);
   const [isScanning, setIsScanning] = useState(false);
   const [lastAutomaticLog, setLastAutomaticLog] = useState(null);
+  const [deviceTimeOffset, setDeviceTimeOffset] = useState(null);
 
   // Clean up BLE manager on unmount
   useEffect(() => {
@@ -134,6 +135,11 @@ export const BleProvider = ({ children, user }) => {
       await deviceConnection.discoverAllServicesAndCharacteristics();
       bleManager.stopDeviceScan();
       setIsScanning(false);
+      
+      // Reset time offset on new connection (device may have rebooted)
+      setDeviceTimeOffset(null);
+      console.log("Reset device time offset on new connection");
+      
       startStreamingData(deviceConnection);
     } catch (e) {
       console.log("FAILED TO CONNECT", e);
@@ -145,44 +151,66 @@ export const BleProvider = ({ children, user }) => {
       await bleManager.cancelDeviceConnection(connectedDevice.id);
       setConnectedDevice(null);
       setData(0);
+      // Keep the time offset when disconnecting - it's still valid for this device session
     }
   };
 
-  const handleAutomaticCigaretteLog = async () => {
+  const calculateTimeOffset = (deviceUptime) => {
+    const currentTime = new Date();
+    const currentTimestamp = Math.floor(currentTime.getTime() / 1000); // Convert to seconds
+    const offset = currentTimestamp - deviceUptime;
+    setDeviceTimeOffset(offset);
+    console.log("Calculated device time offset:", offset, "seconds");
+    console.log("Device uptime:", deviceUptime, "Current time:", currentTimestamp);
+    return offset;
+  };
+
+  const convertDeviceTimestamp = (deviceUptime) => {
+    let offset = deviceTimeOffset;
+    
+    // If we don't have an offset yet, calculate it now
+    if (offset === null) {
+      offset = calculateTimeOffset(deviceUptime);
+    }
+    
+    // Convert device uptime to absolute timestamp
+    const absoluteTimestamp = deviceUptime + offset;
+    const logTime = new Date(absoluteTimestamp * 1000); // Convert to milliseconds for JavaScript
+    
+    console.log("Device uptime:", deviceUptime);
+    console.log("Time offset:", offset);
+    console.log("Absolute timestamp:", absoluteTimestamp);
+    console.log("Converted to date:", logTime);
+    
+    return logTime;
+  };
+
+  const handleAutomaticCigaretteLog = async (deviceTimestamp = null) => {
     if (!user?.uid) {
       console.log("No user available for automatic logging");
       return;
     }
 
-    // Prevent duplicate logs within 30 seconds
-    const now = new Date();
-    const nowTimestamp = now.getTime();
-    const lastLogTimestamp = lastAutomaticLog ? lastAutomaticLog.getTime() : null;
-    
-    console.log("Current time:", now);
-    console.log("Current timestamp:", nowTimestamp);
-    console.log("Last automatic log time:", lastAutomaticLog);
-    console.log("Last automatic log timestamp:", lastLogTimestamp);
-    
-    if (lastAutomaticLog && (nowTimestamp - lastLogTimestamp) < 30000) {
-      const timeDiff = nowTimestamp - lastLogTimestamp;
-      console.log("Automatic logging blocked - too recent (", timeDiff, "ms, need 30000ms)");
-      return;
+    // Convert device uptime to absolute timestamp
+    let logTime;
+    if (deviceTimestamp) {
+      logTime = convertDeviceTimestamp(deviceTimestamp);
+    } else {
+      // Fallback to current time if no device timestamp provided
+      logTime = new Date();
     }
 
     try {
       console.log("Automatic cigarette logging triggered");
-      const createdLog = await CigaretteDataManager.addCigarette("Device", now.toISOString());
+      const createdLog = await CigaretteDataManager.addCigarette("Device", logTime.toISOString());
       console.log("Automatic cigarette log created successfully:", createdLog);
       
       // Update the last automatic log timestamp
-      setLastAutomaticLog(now);
-      console.log("Updated lastAutomaticLog to:", now);
+      setLastAutomaticLog(logTime);
+      console.log("Updated lastAutomaticLog to:", logTime);
       
     } catch (error) {
       console.error("Error creating automatic cigarette log:", error);
-      // You could add an error callback here if needed
-      // onAutomaticLogError?.(error);
     }
   };
 
@@ -197,14 +225,12 @@ export const BleProvider = ({ children, user }) => {
     console.log("Data Recieved", characteristic.value);
 
     const rawData = base64.decode(characteristic.value);
-    console.log("Raw Data", rawData);
 
-    // Check if the message is the cigarette logged notification
-    if (rawData === "Cigarette_Logged") {
-      console.log("Cigarette logged message received from device");
-      handleAutomaticCigaretteLog();
+    const message = JSON.parse(rawData);
+    if (message.type === "cigarette_logged") {
+      console.log("Cigarette logged message received from device", message);
+      handleAutomaticCigaretteLog(message.timestamp);
     }
-
     setData(rawData);
   };
 
@@ -226,16 +252,6 @@ export const BleProvider = ({ children, user }) => {
     }
   };
 
-  const logCigarette = async () => {
-    if (connectedDevice) {
-      connectedDevice.writeCharacteristicWithoutResponseForService(
-        NORDIC_UART_SERVICE_UUID,
-        NORDIC_UART_RX_CHARACTERISTIC,
-        base64.encode(new Date().toString())
-      );
-    }
-  };
-
   // Provide the BLE functionality to all children
   return (
     <BleContext.Provider
@@ -249,8 +265,8 @@ export const BleProvider = ({ children, user }) => {
         disconnectFromDevice,
         data,
         isScanning,
-        logCigarette,
         lastAutomaticLog,
+        deviceTimeOffset,
       }}
     >
       {children}

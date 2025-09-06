@@ -1,56 +1,7 @@
-/**
- * Copyright (c) 2014 - 2021, Nordic Semiconductor ASA
- *
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form, except as embedded into a Nordic
- *    Semiconductor ASA integrated circuit in a product or a software update for
- *    such product, must reproduce the above copyright notice, this list of
- *    conditions and the following disclaimer in the documentation and/or other
- *    materials provided with the distribution.
- *
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * 4. This software, with or without modification, must only be used with a
- *    Nordic Semiconductor ASA integrated circuit.
- *
- * 5. Any software provided in binary form under this license must not be reverse
- *    engineered, decompiled, modified and/or disassembled.
- *
- * THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- */
-/** @file
- *
- * @defgroup ble_sdk_uart_over_ble_main main.c
- * @{
- * @ingroup  ble_sdk_app_nus_eval
- * @brief    UART over BLE application main file.
- *
- * This file contains the source code for a sample application that uses the Nordic UART service.
- * This application uses the @ref srvlib_conn_params module.
- */
-
 
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 #include "nordic_common.h"
 #include "nrf.h"
 #include "ble_hci.h"
@@ -104,6 +55,15 @@
 #define UART_TX_BUF_SIZE                256                                         /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE                256                                         /**< UART RX buffer size. */
 
+// Buffer configuration
+#define CIGARETTE_BUFFER_SIZE           50                                          /**< Maximum number of cigarette logs to buffer */
+#define BUFFER_SEND_DELAY_MS            1000                                        /**< Delay between sending buffered messages (ms) */
+
+// Cigarette log structure
+typedef struct {
+    uint32_t timestamp;  // Unix timestamp when cigarette was logged
+    bool     valid;      // Whether this entry contains valid data
+} cigarette_log_t;
 
 BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
@@ -117,6 +77,15 @@ static ble_uuid_t m_adv_uuids[]          =                                      
     {BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}
 };
 
+// Buffer variables
+static cigarette_log_t m_cigarette_buffer[CIGARETTE_BUFFER_SIZE];
+static uint8_t         m_buffer_head = 0;
+static uint8_t         m_buffer_count = 0;
+static bool            m_buffer_sending = false;
+static uint8_t         m_buffer_send_index = 0;
+
+// Timer for sending buffered messages
+APP_TIMER_DEF(m_buffer_send_timer);
 
 /**@brief Function for assert macro callback.
  *
@@ -134,11 +103,124 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
+/**@brief Function to get current system uptime in seconds.
+ *
+ * @return Current uptime in seconds since device boot.
+ */
+static uint32_t get_uptime_seconds(void)
+{
+    return app_timer_cnt_get() / APP_TIMER_CLOCK_FREQ;
+}
+
+/**@brief Function to add a cigarette log to the buffer.
+ *
+ * @param[in] timestamp Unix timestamp of when the cigarette was logged.
+ */
+static void buffer_add_cigarette(uint32_t timestamp)
+{
+    if (m_buffer_count < CIGARETTE_BUFFER_SIZE) {
+        m_cigarette_buffer[m_buffer_head].timestamp = timestamp;
+        m_cigarette_buffer[m_buffer_head].valid = true;
+        
+        m_buffer_head = (m_buffer_head + 1) % CIGARETTE_BUFFER_SIZE;
+        m_buffer_count++;
+        
+        NRF_LOG_INFO("Cigarette added to buffer. Count: %d/%d, Timestamp: %u", 
+                     m_buffer_count, CIGARETTE_BUFFER_SIZE, timestamp);
+    } else {
+        NRF_LOG_WARNING("Buffer full! Cannot add cigarette log. Overwriting oldest entry.");
+        
+        // Overwrite oldest entry (circular buffer behavior)
+        m_cigarette_buffer[m_buffer_head].timestamp = timestamp;
+        m_cigarette_buffer[m_buffer_head].valid = true;
+        m_buffer_head = (m_buffer_head + 1) % CIGARETTE_BUFFER_SIZE;
+    }
+}
+
+/**@brief Function to send a single buffered cigarette message.
+ */
+static void send_next_buffered_cigarette(void)
+{
+    if (!m_buffer_sending || m_buffer_count == 0 || m_conn_handle == BLE_CONN_HANDLE_INVALID) {
+        return;
+    }
+
+    // Find the oldest entry to send
+    uint8_t send_index = (m_buffer_head - m_buffer_count + m_buffer_send_index) % CIGARETTE_BUFFER_SIZE;
+    
+    if (m_cigarette_buffer[send_index].valid) {
+        char json_message[128];
+        snprintf(json_message, sizeof(json_message), 
+                "{\"type\":\"cigarette_logged\",\"timestamp\":%u,\"buffered\":true}",
+                m_cigarette_buffer[send_index].timestamp);
+        
+        uint16_t length = strlen(json_message);
+        uint32_t err_code = ble_nus_data_send(&m_nus, (uint8_t*)json_message, &length, m_conn_handle);
+        
+        if (err_code == NRF_SUCCESS) {
+            NRF_LOG_INFO("Sent buffered cigarette: %s", json_message);
+            m_cigarette_buffer[send_index].valid = false;
+            m_buffer_send_index++;
+            
+            // Check if we've sent all buffered messages
+            if (m_buffer_send_index >= m_buffer_count) {
+                m_buffer_sending = false;
+                m_buffer_send_index = 0;
+                m_buffer_count = 0;
+                m_buffer_head = 0;
+                NRF_LOG_INFO("All buffered cigarettes sent successfully");
+
+                return;
+            }
+        } else if (err_code != NRF_ERROR_RESOURCES && err_code != NRF_ERROR_INVALID_STATE) {
+            NRF_LOG_ERROR("Failed to send buffered cigarette. Error: 0x%x", err_code);
+            // Continue trying with next message
+            m_buffer_send_index++;
+        }
+    } else {
+        // Skip invalid entries
+        m_buffer_send_index++;
+    }
+    
+    // Schedule next send
+    if (m_buffer_sending && m_buffer_send_index < m_buffer_count) {
+        app_timer_start(m_buffer_send_timer, APP_TIMER_TICKS(BUFFER_SEND_DELAY_MS), NULL);
+    }
+}
+
+/**@brief Timer handler for sending buffered messages.
+ */
+static void buffer_send_timer_handler(void * p_context)
+{
+    send_next_buffered_cigarette();
+}
+
+/**@brief Function to start sending all buffered cigarettes.
+ */
+static void start_sending_buffered_cigarettes(void)
+{
+    if (m_buffer_count == 0 || m_conn_handle == BLE_CONN_HANDLE_INVALID) {
+        return;
+    }
+    
+    NRF_LOG_INFO("Starting to send %d buffered cigarettes", m_buffer_count);
+    
+    m_buffer_sending = true;
+    m_buffer_send_index = 0;
+    
+    // Start sending the first message
+    app_timer_start(m_buffer_send_timer, APP_TIMER_TICKS(BUFFER_SEND_DELAY_MS), NULL);
+}
+
 /**@brief Function for initializing the timer module.
  */
 static void timers_init(void)
 {
     ret_code_t err_code = app_timer_init();
+    APP_ERROR_CHECK(err_code);
+    
+    // Create timer for sending buffered messages
+    err_code = app_timer_create(&m_buffer_send_timer, APP_TIMER_MODE_SINGLE_SHOT, buffer_send_timer_handler);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -379,12 +461,19 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
             APP_ERROR_CHECK(err_code);
+            
+            // Start sending any buffered cigarettes
+            start_sending_buffered_cigarettes();
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
             NRF_LOG_INFO("Disconnected");
             // LED indication will be changed when advertising starts.
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
+            
+            // Stop any ongoing buffer sending
+            m_buffer_sending = false;
+            app_timer_stop(m_buffer_send_timer);
             break;
 
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
@@ -485,6 +574,44 @@ void gatt_init(void)
 }
 
 
+/**@brief Function for logging a cigarette (either immediate or buffered).
+ */
+static void log_cigarette(void)
+{
+    uint32_t timestamp = get_uptime_seconds();
+    
+    if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
+    {
+        // Connected - send immediately
+        char json_message[128];
+        snprintf(json_message, sizeof(json_message), 
+                "{\"type\":\"cigarette_logged\",\"timestamp\":%u,\"buffered\":false}",
+                timestamp);
+        
+        uint16_t length = strlen(json_message);
+        uint32_t err_code = ble_nus_data_send(&m_nus, (uint8_t*)json_message, &length, m_conn_handle);
+        
+        if (err_code == NRF_SUCCESS)
+        {
+            NRF_LOG_INFO("Cigarette logged immediately: %s", json_message);
+        }
+        else if (err_code != NRF_ERROR_INVALID_STATE &&
+                 err_code != NRF_ERROR_RESOURCES &&
+                 err_code != NRF_ERROR_NOT_FOUND)
+        {
+            NRF_LOG_ERROR("Failed to send cigarette log. Error 0x%x", err_code);
+            // If immediate send fails, add to buffer as fallback
+            buffer_add_cigarette(timestamp);
+        }
+    }
+    else
+    {
+        // Not connected - add to buffer
+        buffer_add_cigarette(timestamp);
+        NRF_LOG_INFO("No connection - cigarette added to buffer (timestamp: %u)", timestamp);
+    }
+}
+
 /**@brief Function for sending push notification over BLE.
  *
  * @details This function sends a predefined push notification message to the connected device.
@@ -532,9 +659,9 @@ void bsp_event_handler(bsp_event_t event)
             NRF_LOG_INFO("SW1 (Wake-up button) pressed");
             break;
             
-        case BSP_EVENT_KEY_1:  // SW2 pressed - Send push notification
-            NRF_LOG_INFO("SW2 pressed - Sending push notification");
-            send_push_notification();
+        case BSP_EVENT_KEY_1:  // SW2 pressed - Log cigarette (with buffering support)
+            NRF_LOG_INFO("SW2 pressed - Logging cigarette");
+            log_cigarette();
             break;
 
         case BSP_EVENT_SLEEP:
@@ -753,6 +880,13 @@ int main(void)
 {
     bool erase_bonds;
 
+    // Initialize buffer
+    memset(m_cigarette_buffer, 0, sizeof(m_cigarette_buffer));
+    m_buffer_head = 0;
+    m_buffer_count = 0;
+    m_buffer_sending = false;
+    m_buffer_send_index = 0;
+
     // Initialize.
     uart_init();
     log_init();
@@ -769,6 +903,7 @@ int main(void)
     // Start execution.
     printf("\r\nUART started.\r\n");
     NRF_LOG_INFO("Debug logging for UART over RTT started.");
+    NRF_LOG_INFO("Cigarette buffer initialized (max %d entries)", CIGARETTE_BUFFER_SIZE);
     advertising_start();
 
     // Enter main loop.
