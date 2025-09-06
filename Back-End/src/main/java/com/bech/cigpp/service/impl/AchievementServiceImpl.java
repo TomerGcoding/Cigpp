@@ -143,32 +143,32 @@ public class AchievementServiceImpl implements AchievementService {
             return 0;
         }
 
+        ZoneId zone = ZoneId.systemDefault();
+
+        LocalDate earliestLogDate = logs.get(logs.size() - 1).getTimestamp().atZone(zone).toLocalDate();
+
         // Group logs by date and count per day
         Map<LocalDate, Long> dailyCounts = logs.stream()
                 .collect(Collectors.groupingBy(
-                        log -> log.getTimestamp().atZone(ZoneId.systemDefault()).toLocalDate(),
+                        log -> log.getTimestamp().atZone(zone).toLocalDate(),
                         Collectors.counting()
                 ));
 
-        LocalDate today = LocalDate.now();
-        LocalDate currentDay = today.minusDays(1); // Start from yesterday (completed days only)
+        LocalDate today = LocalDate.now(zone);
+        LocalDate currentDay = today.minusDays(1); // מתחילים מאתמול (רק ימים שהושלמו)
         int consecutiveDays = 0;
 
-        // Count backwards from yesterday
-        while (true) {
-            Long dayCount = dailyCounts.get(currentDay);
-
-            if (dayCount == null) {
-                // No tracking on this day, break the streak
+        for (int i = 0; i < 7; i++) {
+            if (currentDay.isBefore(earliestLogDate)) {
                 break;
             }
 
-            if (dayCount <= targetConsumption) {
+            long cigs = dailyCounts.getOrDefault(currentDay, 0L);
+
+            if (cigs <= targetConsumption) {
                 consecutiveDays++;
                 currentDay = currentDay.minusDays(1);
             } else {
-                // Exceeded target on this day, break the streak
-                consecutiveDays = 0;
                 break;
             }
         }
@@ -204,15 +204,13 @@ public class AchievementServiceImpl implements AchievementService {
     }
 
     private boolean hasCleanDay(String userId) {
-        LocalDate today = LocalDate.now();
-        Instant startOfDay = today.atStartOfDay(ZoneId.systemDefault()).toInstant();
-        Instant endOfDay = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDate yesterday = LocalDate.now(zone).minusDays(1); // יום שהסתיים
+        Instant start = yesterday.atStartOfDay(zone).toInstant();
+        Instant end   = yesterday.plusDays(1).atStartOfDay(zone).toInstant();
 
-        long dailyCount = cigaretteLogRepository.countByUserIdAndTimestampBetween(userId, startOfDay, endOfDay);
-        if (dailyCount == 0) {
-            return true;
-        }
-        return false;
+        long dailyCount = cigaretteLogRepository.countByUserIdAndTimestampBetween(userId, start, end);
+        return dailyCount == 0;
     }
 
     private int calculateCompletedAchievements(String userId) {
