@@ -4,8 +4,8 @@ import {
   updateProfile,
   deleteUser,
 } from "firebase/auth";
-
-const API_BASE_URL = "http://10.100.102.9:8080/api";
+import AchievementService from "./AchievementsService";
+import { API_BASE_URL } from "../config/firebase/apiConfig";
 
 class UserRegistrationService {
   /**
@@ -95,6 +95,14 @@ class UserRegistrationService {
       console.log("Creating user profile on backend...");
       const backendUserProfile = await this.createUserProfile(userProfileData);
 
+      // Step 5: Attach achievements to user
+      console.log("Attaching achievements to user...");
+      await AchievementService.attachAchievementsToUser(firebaseUser.uid);
+
+      // Step 6: Schedule daily achievement recalculation
+      console.log("Scheduling daily achievement recalculation...");
+      AchievementService.scheduleDailyRecalculation(firebaseUser.uid);
+
       // Success! Both operations completed
       console.log("User registration completed successfully");
       return {
@@ -155,6 +163,10 @@ class UserRegistrationService {
         updateProfile(firebaseUser, { displayName: username }),
         this.createUserProfile(userProfileData),
       ]);
+
+      // Step 3: Attach achievements and schedule recalculation
+      await AchievementService.attachAchievementsToUser(firebaseUser.uid);
+      AchievementService.scheduleDailyRecalculation(firebaseUser.uid);
 
       return {
         success: true,

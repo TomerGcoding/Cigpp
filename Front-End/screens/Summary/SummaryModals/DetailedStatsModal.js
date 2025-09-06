@@ -1,61 +1,94 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "react-native-vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { COLOR, FONT } from "../../../constants/theme";
 import CustomClickableIcon from "../../../components/CustomClickableIcon";
-
-// Mock data - replace with actual data from your API or database
-const dailyData = [
-  { hour: "12AM", count: 0 },
-  { hour: "6AM", count: 1 },
-  { hour: "9AM", count: 1 },
-  { hour: "12PM", count: 1 },
-  { hour: "3PM", count: 2 },
-  { hour: "6PM", count: 1 },
-  { hour: "9PM", count: 1 },
-];
-
-const weeklyData = [
-  { day: "Mon", count: 5 },
-  { day: "Tue", count: 7 },
-  { day: "Wed", count: 4 },
-  { day: "Thu", count: 6 },
-  { day: "Fri", count: 8 },
-  { day: "Sat", count: 3 },
-  { day: "Sun", count: 5 },
-];
-
-const monthlyData = [
-  { week: "Week 1", count: 32 },
-  { week: "Week 2", count: 28 },
-  { week: "Week 3", count: 25 },
-  { week: "Week 4", count: 22 },
-];
+import StatisticsService from "../../../services/StatisticsService";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const DetailedStatsModal = ({ navigation }) => {
+  const { user } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState("weekly");
-  const [streakDays, setStreakDays] = useState(3); // This would come from your actual data
+  const [chartData, setChartData] = useState([]);
+  const [summaryStats, setSummaryStats] = useState({
+    total: 0,
+    average: 0,
+    max: 0,
+    min: 0,
+    currentStreak: 0,
+    dateRange: "",
+    bestInsight: "",
+    worstInsight: "",
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Get data based on selected period
-  const getChartData = () => {
-    switch (selectedPeriod) {
-      case "daily":
-        return dailyData;
-      case "weekly":
-        return weeklyData;
-      case "monthly":
-        return monthlyData;
-      default:
-        return weeklyData;
+  // Fetch data based on selected period
+  const fetchData = useCallback(async () => {
+    if (!user?.uid) return;
+
+    try {
+      setIsLoading(true);
+
+      let data;
+      switch (selectedPeriod) {
+        case "daily":
+          data = await StatisticsService.getDailyStats(user.uid);
+          break;
+        case "weekly":
+          data = await StatisticsService.getWeeklyStats(user.uid);
+          break;
+        case "monthly":
+          data = await StatisticsService.getMonthlyStats(user.uid);
+          break;
+        default:
+          data = [];
+      }
+
+      const summary = await StatisticsService.getStatsSummary(
+        user.uid,
+        selectedPeriod
+      );
+
+      setChartData(data);
+      setSummaryStats(summary);
+    } catch (error) {
+      console.error("Error fetching statistics:", error);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [user?.uid, selectedPeriod]);
+
+  // Refresh data (pull to refresh)
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
+
+  // Load data when component mounts or period changes
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        fetchData();
+      }
+    }, [user?.uid, fetchData])
+  );
 
   // Get label based on selected period
   const getLabel = () => {
@@ -71,50 +104,31 @@ const DetailedStatsModal = ({ navigation }) => {
     }
   };
 
-  // Calculate statistics
-  const calculateStats = () => {
-    const data = getChartData();
-    const total = data.reduce((sum, item) => sum + item.count, 0);
-    const average = (total / data.length).toFixed(1);
-    const max = Math.max(...data.map((item) => item.count));
-    const min = Math.min(...data.map((item) => item.count));
-
-    return {
-      total,
-      average,
-      max,
-      min,
-    };
+  // Handle period selection
+  const handlePeriodChange = (period) => {
+    setSelectedPeriod(period);
   };
 
-  const stats = calculateStats();
-
-  // Get formatted date range for display
-  const getDateRange = () => {
-    const today = new Date();
-    const options = { month: "short", day: "numeric" };
-
-    switch (selectedPeriod) {
-      case "daily":
-        return today.toLocaleDateString(undefined, options);
-      case "weekly":
-        const lastWeek = new Date(today);
-        lastWeek.setDate(today.getDate() - 6);
-        return `${lastWeek.toLocaleDateString(
-          undefined,
-          options
-        )} - ${today.toLocaleDateString(undefined, options)}`;
-      case "monthly":
-        const lastMonth = new Date(today);
-        lastMonth.setDate(today.getDate() - 30);
-        return `${lastMonth.toLocaleDateString(
-          undefined,
-          options
-        )} - ${today.toLocaleDateString(undefined, options)}`;
-      default:
-        return "";
-    }
-  };
+  if (isLoading && !refreshing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <CustomClickableIcon
+            onPress={() => navigation.goBack()}
+            color={COLOR.primary}
+            size={30}
+            name="arrow-back"
+          />
+          <Text style={styles.title}>Detailed Statistics</Text>
+          <View style={{ width: 30 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLOR.primary} />
+          <Text style={styles.loadingText}>Loading statistics...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -126,163 +140,197 @@ const DetailedStatsModal = ({ navigation }) => {
           name="arrow-back"
         />
         <Text style={styles.title}>Detailed Statistics</Text>
-        <View style={{ width: 30 }} />
+        <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
+          <Ionicons name="refresh" size={24} color={COLOR.primary} />
+        </TouchableOpacity>
       </View>
 
-      {/* Period selector */}
-      <View style={styles.periodSelector}>
-        {["daily", "weekly", "monthly"].map((period) => (
-          <TouchableOpacity
-            key={period}
-            style={[
-              styles.periodOption,
-              selectedPeriod === period && styles.selectedPeriod,
-            ]}
-            onPress={() => setSelectedPeriod(period)}
-          >
-            <Text
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLOR.primary]}
+            tintColor={COLOR.primary}
+          />
+        }
+      >
+        {/* Period selector */}
+        <View style={styles.periodSelector}>
+          {["daily", "weekly", "monthly"].map((period) => (
+            <TouchableOpacity
+              key={period}
               style={[
-                styles.periodText,
-                selectedPeriod === period && styles.selectedPeriodText,
+                styles.periodOption,
+                selectedPeriod === period && styles.selectedPeriod,
               ]}
+              onPress={() => handlePeriodChange(period)}
             >
-              {period.charAt(0).toUpperCase() + period.slice(1)}
+              <Text
+                style={[
+                  styles.periodText,
+                  selectedPeriod === period && styles.selectedPeriodText,
+                ]}
+              >
+                {period.charAt(0).toUpperCase() + period.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Date range */}
+        <Text style={styles.dateRange}>{summaryStats.dateRange}</Text>
+
+        {/* Summary stats */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{summaryStats.total}</Text>
+            <Text style={styles.statLabel}>Total</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>
+              {summaryStats.average.toFixed(1)}
             </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <Text style={styles.statLabel}>
+              Average per{" "}
+              {selectedPeriod === "daily"
+                ? "hour"
+                : selectedPeriod === "weekly"
+                ? "day"
+                : "week"}
+            </Text>
+          </View>
 
-      {/* Date range */}
-      <Text style={styles.dateRange}>{getDateRange()}</Text>
-
-      {/* Summary stats */}
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{summaryStats.currentStreak}d</Text>
+            <Text style={styles.statLabel}>Current Streak</Text>
+          </View>
         </View>
 
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.average}</Text>
-          <Text style={styles.statLabel}>
-            Average per{" "}
-            {selectedPeriod === "daily"
-              ? "hour"
-              : selectedPeriod === "weekly"
-              ? "day"
-              : "week"}
+        {/* Main chart */}
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>
+            {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)}{" "}
+            Consumption
           </Text>
+
+          {chartData.length > 0 ? (
+            <View style={styles.chartContent}>
+              <View style={styles.yAxisLabels}>
+                <Text style={styles.axisLabel}>High</Text>
+                <Text style={styles.axisLabel}>Med</Text>
+                <Text style={styles.axisLabel}>Low</Text>
+              </View>
+
+              <View style={styles.chart}>
+                {chartData.map((item, index) => {
+                  const maxValue = Math.max(...chartData.map((d) => d.count));
+                  const heightPercentage =
+                    maxValue > 0 ? (item.count / maxValue) * 100 : 0;
+
+                  // Determine bar color based on value relative to average
+                  const avg = summaryStats.average;
+                  let barColor = COLOR.primary;
+                  if (item.count > avg * 1.5) barColor = "#e74c3c"; // High
+                  else if (item.count < avg * 0.5) barColor = "#2ecc71"; // Low
+
+                  // Determine if this is current period
+                  const isCurrentPeriod =
+                    (selectedPeriod === "daily" &&
+                      index === chartData.length - 1) ||
+                    (selectedPeriod === "weekly" && index === 6);
+
+                  return (
+                    <View key={index} style={styles.barColumn}>
+                      <View style={styles.barValueContainer}>
+                        <Text style={styles.barValue}>{item.count}</Text>
+                      </View>
+                      <View style={styles.barWrapper}>
+                        <View
+                          style={[
+                            styles.bar,
+                            {
+                              height: `${heightPercentage}%`,
+                              backgroundColor: isCurrentPeriod
+                                ? COLOR.primary
+                                : barColor + "99",
+                              borderColor: isCurrentPeriod
+                                ? COLOR.primary
+                                : barColor,
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Text
+                        style={[
+                          styles.barLabel,
+                          isCurrentPeriod && styles.currentBarLabel,
+                        ]}
+                      >
+                        {selectedPeriod === "daily"
+                          ? item.hour
+                          : selectedPeriod === "weekly"
+                          ? item.day
+                          : item.week}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.noDataContainer}>
+              <Ionicons name="bar-chart-outline" size={60} color="#d0d0d0" />
+              <Text style={styles.noDataText}>No data available</Text>
+              <Text style={styles.noDataSubtext}>
+                Start tracking cigarettes to see your statistics
+              </Text>
+            </View>
+          )}
         </View>
 
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{streakDays}d</Text>
-          <Text style={styles.statLabel}>Current Streak</Text>
+        {/* Additional insights */}
+        <View style={styles.insightsContainer}>
+          <Text style={styles.insightsTitle}>Insights</Text>
+
+          {summaryStats.bestInsight && (
+            <View style={styles.insightRow}>
+              <View style={styles.insightIconContainer}>
+                <Ionicons name="trending-down" size={18} color="#2ecc71" />
+              </View>
+              <Text style={styles.insightText}>{summaryStats.bestInsight}</Text>
+            </View>
+          )}
+
+          {summaryStats.worstInsight && (
+            <View style={styles.insightRow}>
+              <View style={styles.insightIconContainer}>
+                <Ionicons name="trending-up" size={18} color="#e74c3c" />
+              </View>
+              <Text style={styles.insightText}>
+                {summaryStats.worstInsight}
+              </Text>
+            </View>
+          )}
+
+          {!summaryStats.bestInsight && !summaryStats.worstInsight && (
+            <View style={styles.insightRow}>
+              <View style={styles.insightIconContainer}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={18}
+                  color={COLOR.primary}
+                />
+              </View>
+              <Text style={styles.insightText}>
+                Keep tracking your cigarettes to unlock personalized insights!
+              </Text>
+            </View>
+          )}
         </View>
-      </View>
-
-      {/* Main chart */}
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>
-          {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)}{" "}
-          Consumption
-        </Text>
-
-        <View style={styles.chartContent}>
-          <View style={styles.yAxisLabels}>
-            <Text style={styles.axisLabel}>High</Text>
-            <Text style={styles.axisLabel}>Med</Text>
-            <Text style={styles.axisLabel}>Low</Text>
-          </View>
-
-          <View style={styles.chart}>
-            {getChartData().map((item, index) => {
-              const data = getChartData();
-              const maxValue = Math.max(...data.map((d) => d.count));
-              const heightPercentage =
-                maxValue > 0 ? (item.count / maxValue) * 100 : 0;
-
-              // Determine bar color based on value relative to average
-              const avg = stats.average;
-              let barColor = COLOR.primary;
-              if (item.count > avg * 1.5) barColor = "#e74c3c"; // High
-              else if (item.count < avg * 0.5) barColor = "#2ecc71"; // Low
-
-              // Determine if this is "today" or current period
-              const isCurrentPeriod =
-                (selectedPeriod === "daily" &&
-                  index === dailyData.length - 1) ||
-                (selectedPeriod === "weekly" && index === 6);
-
-              return (
-                <View key={index} style={styles.barColumn}>
-                  <View style={styles.barValueContainer}>
-                    <Text style={styles.barValue}>{item.count}</Text>
-                  </View>
-                  <View style={styles.barWrapper}>
-                    <View
-                      style={[
-                        styles.bar,
-                        {
-                          height: `${heightPercentage}%`,
-                          backgroundColor: isCurrentPeriod
-                            ? COLOR.primary
-                            : barColor + "99",
-                          borderColor: isCurrentPeriod
-                            ? COLOR.primary
-                            : barColor,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.barLabel,
-                      isCurrentPeriod && styles.currentBarLabel,
-                    ]}
-                  >
-                    {selectedPeriod === "daily"
-                      ? item.hour
-                      : selectedPeriod === "weekly"
-                      ? item.day
-                      : item.week}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      </View>
-
-      {/* Additional insights */}
-      <View style={styles.insightsContainer}>
-        <Text style={styles.insightsTitle}>Insights</Text>
-
-        <View style={styles.insightRow}>
-          <View style={styles.insightIconContainer}>
-            <Ionicons name="trending-down" size={18} color="#2ecc71" />
-          </View>
-          <Text style={styles.insightText}>
-            {selectedPeriod === "weekly"
-              ? "Your Wednesday consumption was 43% lower than average."
-              : selectedPeriod === "daily"
-              ? "Morning hours (6-9AM) show the lowest consumption."
-              : "Week 3 shows a 10% reduction from Week 2."}
-          </Text>
-        </View>
-
-        <View style={styles.insightRow}>
-          <View style={styles.insightIconContainer}>
-            <Ionicons name="trending-up" size={18} color="#e74c3c" />
-          </View>
-          <Text style={styles.insightText}>
-            {selectedPeriod === "weekly"
-              ? "Friday was your highest consumption day this week."
-              : selectedPeriod === "daily"
-              ? "Afternoon (3PM) shows peak consumption for today."
-              : "Week 1 had the highest consumption this month."}
-          </Text>
-        </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -303,6 +351,23 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: FONT.bold,
     color: COLOR.primary,
+  },
+  refreshButton: {
+    padding: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    color: COLOR.primary,
+  },
+  scrollView: {
+    flex: 1,
   },
   periodSelector: {
     flexDirection: "row",
@@ -446,6 +511,25 @@ const styles = StyleSheet.create({
   currentBarLabel: {
     fontFamily: FONT.bold,
     color: COLOR.primary,
+  },
+  noDataContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+    marginTop: 20,
+  },
+  noDataText: {
+    fontSize: 18,
+    fontFamily: FONT.bold,
+    color: COLOR.primary,
+    marginTop: 15,
+  },
+  noDataSubtext: {
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: COLOR.subPrimary,
+    textAlign: "center",
+    marginTop: 8,
   },
   insightsContainer: {
     marginHorizontal: 20,
