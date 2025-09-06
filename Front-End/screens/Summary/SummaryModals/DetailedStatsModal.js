@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "react-native-vector-icons";
@@ -15,9 +16,13 @@ import { COLOR, FONT } from "../../../constants/theme";
 import CustomClickableIcon from "../../../components/CustomClickableIcon";
 import StatisticsService from "../../../services/StatisticsService";
 import { useAuth } from "../../../contexts/AuthContext";
+import { usePreferences } from "../../../contexts/PreferencesContext";
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const DetailedStatsModal = ({ navigation }) => {
   const { user } = useAuth();
+  const { preferences } = usePreferences();
   const [selectedPeriod, setSelectedPeriod] = useState("weekly");
   const [chartData, setChartData] = useState([]);
   const [summaryStats, setSummaryStats] = useState({
@@ -25,10 +30,14 @@ const DetailedStatsModal = ({ navigation }) => {
     average: 0,
     max: 0,
     min: 0,
-    currentStreak: 0,
     dateRange: "",
     bestInsight: "",
     worstInsight: "",
+  });
+  const [trendData, setTrendData] = useState({
+    percentageChange: 0,
+    daysBelow: 0,
+    peakPeriod: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,32 +51,40 @@ const DetailedStatsModal = ({ navigation }) => {
 
       let data;
       switch (selectedPeriod) {
-        case "daily":
-          data = await StatisticsService.getDailyStats(user.uid);
-          break;
         case "weekly":
           data = await StatisticsService.getWeeklyStats(user.uid);
           break;
         case "monthly":
           data = await StatisticsService.getMonthlyStats(user.uid);
           break;
+        case "yearly":
+          data = await StatisticsService.getYearlyStats(user.uid);
+          break;
         default:
           data = [];
       }
 
       const summary = await StatisticsService.getStatsSummary(
-        user.uid,
-        selectedPeriod
+          user.uid,
+          selectedPeriod
+      );
+
+      // Get trend data
+      const trends = await StatisticsService.getTrendData(
+          user.uid,
+          selectedPeriod,
+          preferences.targetConsumption
       );
 
       setChartData(data);
       setSummaryStats(summary);
+      setTrendData(trends);
     } catch (error) {
       console.error("Error fetching statistics:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.uid, selectedPeriod]);
+  }, [user?.uid, selectedPeriod, preferences.targetConsumption]);
 
   // Refresh data (pull to refresh)
   const onRefresh = useCallback(async () => {
@@ -83,255 +100,280 @@ const DetailedStatsModal = ({ navigation }) => {
 
   // Refresh data when screen comes into focus
   useFocusEffect(
-    useCallback(() => {
-      if (user?.uid) {
-        fetchData();
-      }
-    }, [user?.uid, fetchData])
+      useCallback(() => {
+        if (user?.uid) {
+          fetchData();
+        }
+      }, [user?.uid, fetchData])
   );
 
-  // Get label based on selected period
-  const getLabel = () => {
-    switch (selectedPeriod) {
-      case "daily":
-        return "Hour";
-      case "weekly":
-        return "Day";
-      case "monthly":
-        return "Week";
-      default:
-        return "Day";
-    }
-  };
-
-  // Handle period selection
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
   };
 
+  // Helper function for stat cards
+  const getStatCard = (title, value, subtitle, icon, color) => (
+      <View style={[styles.statCard, { borderLeftColor: color }]}>
+        <View style={styles.statHeader}>
+          <Ionicons name={icon} size={20} color={color} />
+          <Text style={styles.statTitle}>{title}</Text>
+        </View>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statSubtitle}>{subtitle}</Text>
+      </View>
+  );
+
+  // Render enhanced chart
+  const renderChart = () => {
+    if (chartData.length === 0) {
+      return (
+          <View style={styles.noDataContainer}>
+            <Ionicons name="bar-chart-outline" size={60} color="#d0d0d0" />
+            <Text style={styles.noDataText}>No data available</Text>
+            <Text style={styles.noDataSubtext}>
+              Start tracking cigarettes to see your statistics
+            </Text>
+          </View>
+      );
+    }
+
+    const maxValue = Math.max(...chartData.map(d => d.count));
+
+    return (
+        <View style={styles.chartContainer}>
+          <View style={styles.chartHeader}>
+            <Text style={styles.chartTitle}>
+              {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)} Overview
+            </Text>
+          </View>
+
+          <View style={styles.chartContent}>
+            {/* Y-axis labels */}
+            <View style={styles.yAxisContainer}>
+              <Text style={styles.yAxisLabel}>{maxValue}</Text>
+              <Text style={styles.yAxisLabel}>{Math.round(maxValue * 0.5)}</Text>
+              <Text style={styles.yAxisLabel}>0</Text>
+            </View>
+
+            {/* Chart bars */}
+            <View style={styles.chartBars}>
+              {chartData.map((item, index) => {
+                const heightPercentage = maxValue > 0 ? (item.count / maxValue) * 100 : 0;
+                const barColor = COLOR.primary;
+
+                return (
+                    <View key={index} style={styles.barColumn}>
+                      {/* Value label */}
+                      <View style={styles.barValueContainer}>
+                        {item.count > 0 && (
+                            <View style={[styles.valueLabel, { backgroundColor: barColor }]}>
+                              <Text style={styles.valueLabelText}>{item.count}</Text>
+                            </View>
+                        )}
+                      </View>
+
+                      {/* Bar */}
+                      <View style={styles.barContainer}>
+                        <View
+                            style={[
+                              styles.bar,
+                              {
+                                height: `${heightPercentage}%`,
+                                backgroundColor: barColor + '80',
+                                borderColor: barColor,
+                              },
+                            ]}
+                        />
+                      </View>
+
+                      {/* X-axis label */}
+                      <Text style={styles.barLabel} numberOfLines={1} ellipsizeMode="tail">
+                        {selectedPeriod === "weekly" ? item.day :
+                            selectedPeriod === "monthly" ? item.week : item.month}
+                      </Text>
+                    </View>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+    );
+  };
+
+  // Render trend analysis section with real data
+  const renderTrendAnalysis = () => (
+      <View style={styles.trendContainer}>
+        <Text style={styles.sectionTitle}>Trend Analysis</Text>
+
+        <View style={styles.trendCards}>
+          <View style={[styles.trendCard, {
+            backgroundColor: trendData.percentageChange >= 0 ? COLOR.red + '20' : COLOR.green + '20'
+          }]}>
+            <Ionicons
+                name={trendData.percentageChange >= 0 ? "trending-up" : "trending-down"}
+                size={24}
+                color={trendData.percentageChange >= 0 ? COLOR.red : COLOR.green}
+            />
+            <Text style={styles.trendValue}>
+              {trendData.percentageChange >= 0 ? '+' : ''}{trendData.percentageChange}%
+            </Text>
+            <Text style={styles.trendLabel}>
+              vs Last {selectedPeriod === 'weekly' ? 'Week' : selectedPeriod === 'monthly' ? 'Month' : 'Year'}
+            </Text>
+          </View>
+
+          <View style={[styles.trendCard, { backgroundColor: COLOR.primary + '20' }]}>
+            <Ionicons name="calendar-outline" size={24} color={COLOR.primary} />
+            <Text style={styles.trendValue}>{trendData.daysBelow}</Text>
+            <Text style={styles.trendLabel}>Days Below Target</Text>
+          </View>
+
+          <View style={[styles.trendCard, { backgroundColor: COLOR.orange + '20' }]}>
+            <Ionicons name="time-outline" size={24} color={COLOR.orange} />
+            <Text style={styles.trendValue}>{trendData.peakPeriod}</Text>
+            <Text style={styles.trendLabel}>Peak Time</Text>
+          </View>
+        </View>
+      </View>
+  );
+
+  // Render insights section
+  const renderInsights = () => (
+      <View style={styles.insightsContainer}>
+        <Text style={styles.sectionTitle}>Smart Insights</Text>
+
+        {summaryStats.bestInsight && (
+            <View style={[styles.insightCard, { backgroundColor: COLOR.green + '15' }]}>
+              <View style={[styles.insightIcon, { backgroundColor: COLOR.green }]}>
+                <Ionicons name="trending-down" size={18} color={COLOR.white} />
+              </View>
+              <View style={styles.insightContent}>
+                <Text style={styles.insightTitle}>Good Progress</Text>
+                <Text style={styles.insightText}>{summaryStats.bestInsight}</Text>
+              </View>
+            </View>
+        )}
+
+        {summaryStats.worstInsight && (
+            <View style={[styles.insightCard, { backgroundColor: COLOR.orange + '15' }]}>
+              <View style={[styles.insightIcon, { backgroundColor: COLOR.orange }]}>
+                <Ionicons name="warning" size={18} color={COLOR.white} />
+              </View>
+              <View style={styles.insightContent}>
+                <Text style={styles.insightTitle}>Area for Improvement</Text>
+                <Text style={styles.insightText}>{summaryStats.worstInsight}</Text>
+              </View>
+            </View>
+        )}
+
+        <View style={[styles.insightCard, { backgroundColor: COLOR.primary + '15' }]}>
+          <View style={[styles.insightIcon, { backgroundColor: COLOR.primary }]}>
+            <Ionicons name="bulb" size={18} color={COLOR.white} />
+          </View>
+          <View style={styles.insightContent}>
+            <Text style={styles.insightTitle}>Tip</Text>
+            <Text style={styles.insightText}>
+              Consider setting a lower daily target to gradually reduce consumption.
+            </Text>
+          </View>
+        </View>
+      </View>
+  );
+
   if (isLoading && !refreshing) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <CustomClickableIcon
-            onPress={() => navigation.goBack()}
-            color={COLOR.primary}
-            size={30}
-            name="arrow-back"
-          />
-          <Text style={styles.title}>Detailed Statistics</Text>
-          <View style={{ width: 30 }} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLOR.primary} />
-          <Text style={styles.loadingText}>Loading statistics...</Text>
-        </View>
-      </SafeAreaView>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.header}>
+            <CustomClickableIcon
+                onPress={() => navigation.goBack()}
+                color={COLOR.primary}
+                size={30}
+                name="arrow-back"
+            />
+            <Text style={styles.headerTitle}>Statistics</Text>
+            <View style={{ width: 30 }} />
+          </View>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLOR.primary} />
+            <Text style={styles.loadingText}>Loading statistics...</Text>
+          </View>
+        </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <CustomClickableIcon
-          onPress={() => navigation.goBack()}
-          color={COLOR.primary}
-          size={30}
-          name="arrow-back"
-        />
-        <Text style={styles.title}>Detailed Statistics</Text>
-        <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
-          <Ionicons name="refresh" size={24} color={COLOR.primary} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[COLOR.primary]}
-            tintColor={COLOR.primary}
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <CustomClickableIcon
+              onPress={() => navigation.goBack()}
+              color={COLOR.primary}
+              size={30}
+              name="arrow-back"
           />
-        }
-      >
-        {/* Period selector */}
-        <View style={styles.periodSelector}>
-          {["daily", "weekly", "monthly"].map((period) => (
-            <TouchableOpacity
-              key={period}
-              style={[
-                styles.periodOption,
-                selectedPeriod === period && styles.selectedPeriod,
-              ]}
-              onPress={() => handlePeriodChange(period)}
-            >
-              <Text
-                style={[
-                  styles.periodText,
-                  selectedPeriod === period && styles.selectedPeriodText,
-                ]}
-              >
-                {period.charAt(0).toUpperCase() + period.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <Text style={styles.headerTitle}>Statistics</Text>
+          <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
+            <Ionicons name="refresh" size={24} color={COLOR.primary} />
+          </TouchableOpacity>
         </View>
 
-        {/* Date range */}
-        <Text style={styles.dateRange}>{summaryStats.dateRange}</Text>
-
-        {/* Summary stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{summaryStats.total}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+        <ScrollView
+            style={styles.scrollView}
+            refreshControl={
+              <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[COLOR.primary]}
+                  tintColor={COLOR.primary}
+              />
+            }
+            showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.periodSelector}>
+            {["weekly", "monthly", "yearly"].map((period) => (
+                <TouchableOpacity
+                    key={period}
+                    style={[
+                      styles.periodOption,
+                      selectedPeriod === period && styles.selectedPeriod,
+                    ]}
+                    onPress={() => handlePeriodChange(period)}
+                >
+                  <Text
+                      style={[
+                        styles.periodText,
+                        selectedPeriod === period && styles.selectedPeriodText,
+                      ]}
+                  >
+                    {period.charAt(0).toUpperCase() + period.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+            ))}
           </View>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {summaryStats.average.toFixed(1)}
-            </Text>
-            <Text style={styles.statLabel}>
-              Average per{" "}
-              {selectedPeriod === "daily"
-                ? "hour"
-                : selectedPeriod === "weekly"
-                ? "day"
-                : "week"}
-            </Text>
+          {/* Date range */}
+          <Text style={styles.dateRange}>{summaryStats.dateRange}</Text>
+
+          <View style={styles.statsGrid}>
+            {getStatCard("Total", summaryStats.total.toString(), "cigarettes", "bar-chart", COLOR.primary)}
+            {getStatCard(
+                selectedPeriod === "weekly" ? "Weekly Avg" : selectedPeriod === "monthly" ? "Monthly Avg" : "Yearly Avg",
+                Math.round(summaryStats.average).toString(),
+                selectedPeriod === "weekly" ? "per day" : selectedPeriod === "monthly" ? "per week" : "per month",
+                "trending-up",
+                COLOR.green
+            )}
           </View>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{summaryStats.currentStreak}d</Text>
-            <Text style={styles.statLabel}>Current Streak</Text>
-          </View>
-        </View>
+          {/* Enhanced Chart */}
+          {renderChart()}
 
-        {/* Main chart */}
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>
-            {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)}{" "}
-            Consumption
-          </Text>
+          {/* Trend Analysis with Real Data */}
+          {renderTrendAnalysis()}
 
-          {chartData.length > 0 ? (
-            <View style={styles.chartContent}>
-              <View style={styles.yAxisLabels}>
-                <Text style={styles.axisLabel}>High</Text>
-                <Text style={styles.axisLabel}>Med</Text>
-                <Text style={styles.axisLabel}>Low</Text>
-              </View>
-
-              <View style={styles.chart}>
-                {chartData.map((item, index) => {
-                  const maxValue = Math.max(...chartData.map((d) => d.count));
-                  const heightPercentage =
-                    maxValue > 0 ? (item.count / maxValue) * 100 : 0;
-
-                  // Determine bar color based on value relative to average
-                  const avg = summaryStats.average;
-                  let barColor = COLOR.primary;
-                  if (item.count > avg * 1.5) barColor = "#e74c3c"; // High
-                  else if (item.count < avg * 0.5) barColor = "#2ecc71"; // Low
-
-                  // Determine if this is current period
-                  const isCurrentPeriod =
-                    (selectedPeriod === "daily" &&
-                      index === chartData.length - 1) ||
-                    (selectedPeriod === "weekly" && index === 6);
-
-                  return (
-                    <View key={index} style={styles.barColumn}>
-                      <View style={styles.barValueContainer}>
-                        <Text style={styles.barValue}>{item.count}</Text>
-                      </View>
-                      <View style={styles.barWrapper}>
-                        <View
-                          style={[
-                            styles.bar,
-                            {
-                              height: `${heightPercentage}%`,
-                              backgroundColor: isCurrentPeriod
-                                ? COLOR.primary
-                                : barColor + "99",
-                              borderColor: isCurrentPeriod
-                                ? COLOR.primary
-                                : barColor,
-                            },
-                          ]}
-                        />
-                      </View>
-                      <Text
-                        style={[
-                          styles.barLabel,
-                          isCurrentPeriod && styles.currentBarLabel,
-                        ]}
-                      >
-                        {selectedPeriod === "daily"
-                          ? item.hour
-                          : selectedPeriod === "weekly"
-                          ? item.day
-                          : item.week}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          ) : (
-            <View style={styles.noDataContainer}>
-              <Ionicons name="bar-chart-outline" size={60} color="#d0d0d0" />
-              <Text style={styles.noDataText}>No data available</Text>
-              <Text style={styles.noDataSubtext}>
-                Start tracking cigarettes to see your statistics
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Additional insights */}
-        <View style={styles.insightsContainer}>
-          <Text style={styles.insightsTitle}>Insights</Text>
-
-          {summaryStats.bestInsight && (
-            <View style={styles.insightRow}>
-              <View style={styles.insightIconContainer}>
-                <Ionicons name="trending-down" size={18} color="#2ecc71" />
-              </View>
-              <Text style={styles.insightText}>{summaryStats.bestInsight}</Text>
-            </View>
-          )}
-
-          {summaryStats.worstInsight && (
-            <View style={styles.insightRow}>
-              <View style={styles.insightIconContainer}>
-                <Ionicons name="trending-up" size={18} color="#e74c3c" />
-              </View>
-              <Text style={styles.insightText}>
-                {summaryStats.worstInsight}
-              </Text>
-            </View>
-          )}
-
-          {!summaryStats.bestInsight && !summaryStats.worstInsight && (
-            <View style={styles.insightRow}>
-              <View style={styles.insightIconContainer}>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={18}
-                  color={COLOR.primary}
-                />
-              </View>
-              <Text style={styles.insightText}>
-                Keep tracking your cigarettes to unlock personalized insights!
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Smart Insights */}
+          {renderInsights()}
+        </ScrollView>
+      </SafeAreaView>
   );
 };
 
@@ -347,7 +389,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 20,
   },
-  title: {
+  headerTitle: {
     fontSize: 20,
     fontFamily: FONT.bold,
     color: COLOR.primary,
@@ -373,15 +415,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     paddingHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 15,
   },
   periodOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginHorizontal: 8,
-    backgroundColor: "rgba(0,0,0,0.05)",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    marginHorizontal: 4,
+    backgroundColor: COLOR.lightBackground,
+    minWidth: 80,
+    alignItems: "center",
   },
   selectedPeriod: {
     backgroundColor: COLOR.primary,
@@ -392,125 +436,143 @@ const styles = StyleSheet.create({
     color: COLOR.primary,
   },
   selectedPeriodText: {
-    color: "#FFFFFF",
+    color: COLOR.white,
+    fontFamily: FONT.bold,
   },
   dateRange: {
     textAlign: "center",
     fontFamily: FONT.medium,
-    fontSize: 14,
+    fontSize: 16,
     color: COLOR.subPrimary,
     marginBottom: 20,
   },
-  statsRow: {
+  statsGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
     paddingHorizontal: 20,
     marginBottom: 25,
   },
   statCard: {
-    width: "30%",
-    alignItems: "center",
-    backgroundColor: COLOR.lightBackground,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 18,
-    fontFamily: FONT.bold,
-    color: COLOR.primary,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontFamily: FONT.regular,
-    color: COLOR.subPrimary,
-    textAlign: "center",
-  },
-  chartContainer: {
-    marginHorizontal: 20,
-    marginBottom: 20,
+    width: "45%",
     backgroundColor: COLOR.lightBackground,
     borderRadius: 16,
-    padding: 15,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  chartTitle: {
-    fontSize: 16,
+  statHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  statTitle: {
+    fontSize: 14,
+    fontFamily: FONT.medium,
+    color: COLOR.subPrimary,
+    marginLeft: 6,
+  },
+  statValue: {
+    fontSize: 24,
     fontFamily: FONT.bold,
     color: COLOR.primary,
-    marginBottom: 15,
+    marginBottom: 4,
+  },
+  statSubtitle: {
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: COLOR.subPrimary,
+  },
+  chartContainer: {
+    marginHorizontal: 20,
+    marginBottom: 25,
+    backgroundColor: COLOR.lightBackground,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chartHeader: {
+    marginBottom: 20,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontFamily: FONT.bold,
+    color: COLOR.primary,
+    textAlign: "center",
   },
   chartContent: {
     flexDirection: "row",
     height: 200,
-    marginTop: 10,
   },
-  yAxisLabels: {
+  yAxisContainer: {
     width: 30,
     height: "100%",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "flex-end",
+    paddingRight: 8,
     paddingVertical: 10,
   },
-  axisLabel: {
-    fontSize: 10,
+  yAxisLabel: {
+    fontSize: 12,
     fontFamily: FONT.regular,
     color: COLOR.subPrimary,
   },
-  chart: {
+  chartBars: {
     flex: 1,
     flexDirection: "row",
-    justifyContent: "space-around",
     alignItems: "flex-end",
     height: "100%",
+    position: "relative",
   },
   barColumn: {
+    flex: 1,
     alignItems: "center",
-    width: "12%",
     height: "100%",
     justifyContent: "flex-end",
+    marginHorizontal: 2,
   },
   barValueContainer: {
-    position: "absolute",
-    top: 0,
+    height: 30,
+    justifyContent: "center",
     alignItems: "center",
   },
-  barValue: {
-    fontSize: 12,
+  valueLabel: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    minWidth: 20,
+    alignItems: "center",
+  },
+  valueLabelText: {
+    fontSize: 10,
     fontFamily: FONT.bold,
-    color: COLOR.subPrimary,
+    color: COLOR.white,
   },
-  barWrapper: {
-    width: "100%",
-    height: "80%",
+  barContainer: {
+    width: "70%",
+    height: "75%",
     justifyContent: "flex-end",
-    alignItems: "center",
   },
   bar: {
-    width: "70%",
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
     minHeight: 4,
   },
   barLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: FONT.regular,
     color: COLOR.subPrimary,
     marginTop: 8,
-  },
-  currentBarLabel: {
-    fontFamily: FONT.bold,
-    color: COLOR.primary,
+    textAlign: "center",
+    width: "100%",
   },
   noDataContainer: {
     alignItems: "center",
@@ -531,40 +593,71 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 8,
   },
-  insightsContainer: {
+  trendContainer: {
     marginHorizontal: 20,
-    marginBottom: 30,
+    marginBottom: 25,
   },
-  insightsTitle: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 18,
     fontFamily: FONT.bold,
     color: COLOR.primary,
     marginBottom: 15,
   },
-  insightRow: {
+  trendCards: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 12,
-    backgroundColor: COLOR.lightBackground,
-    borderRadius: 12,
-    padding: 12,
+    justifyContent: "space-between",
   },
-  insightIconContainer: {
-    width: 24,
-    height: 24,
+  trendCard: {
+    flex: 1,
+    alignItems: "center",
+    padding: 16,
     borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.05)",
+    marginHorizontal: 4,
+  },
+  trendValue: {
+    fontSize: 20,
+    fontFamily: FONT.bold,
+    color: COLOR.primary,
+    marginVertical: 4,
+  },
+  trendLabel: {
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: COLOR.subPrimary,
+    textAlign: "center",
+  },
+  insightsContainer: {
+    marginHorizontal: 20,
+    marginBottom: 30,
+  },
+  insightCard: {
+    flexDirection: "row",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  insightIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
-    marginTop: 2,
+    marginRight: 12,
+  },
+  insightContent: {
+    flex: 1,
+  },
+  insightTitle: {
+    fontSize: 14,
+    fontFamily: FONT.bold,
+    color: COLOR.primary,
+    marginBottom: 4,
   },
   insightText: {
-    flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: FONT.regular,
     color: COLOR.primary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
 });
 
