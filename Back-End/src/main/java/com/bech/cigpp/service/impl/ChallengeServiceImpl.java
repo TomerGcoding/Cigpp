@@ -32,7 +32,7 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     @Override
     public Challenge createChallenge(String title, String description, ChallengeType challengeType,
-                                   Integer timeFrameDays, LocalDateTime startDate, String creatorUserId) {
+                                   Integer timeFrameDays, LocalDateTime startDate, String creatorUserId, Integer personalTarget) {
         validateChallengeInput(title, challengeType, timeFrameDays, startDate);
         
         LocalDateTime endDate = startDate.plusDays(timeFrameDays);
@@ -50,7 +50,7 @@ public class ChallengeServiceImpl implements ChallengeService {
         Challenge savedChallenge = challengeRepository.save(challenge);
         
         // Automatically join creator to the challenge
-        joinChallenge(savedChallenge.getChallengeId(), creatorUserId, null);
+        joinChallenge(savedChallenge.getChallengeId(), creatorUserId, personalTarget);
         
         return savedChallenge;
     }
@@ -64,8 +64,12 @@ public class ChallengeServiceImpl implements ChallengeService {
     @Override
     @Transactional(readOnly = true)
     public List<Challenge> getAvailableChallenges(String userId) {
-        return challengeRepository.findAvailableChallenges(userId, ChallengeStatus.ACTIVE);
+        return challengeRepository.findAllUserChallenges(userId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Challenge> getChallengesByStatusAndUser(ChallengeStatus status, String userId){return challengeRepository.findAllByUserAndStatus(userId, status);}
 
     @Override
     @Transactional(readOnly = true)

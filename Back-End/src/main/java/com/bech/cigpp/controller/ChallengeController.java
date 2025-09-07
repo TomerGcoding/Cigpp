@@ -7,6 +7,7 @@ import com.bech.cigpp.service.api.ChallengeService;
 import com.bech.cigpp.service.api.UserService;
 import com.bech.cigpp.util.ChallengeMapper;
 import jakarta.validation.Valid;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +40,8 @@ public class ChallengeController {
                 request.challengeType(),
                 request.timeFrameDays(),
                 request.startDate(),
-                userId
+                userId,
+                request.personalTarget()
         );
 
         Long participantCount = challengeService.getChallengeParticipantCount(challenge.getChallengeId());
@@ -161,7 +163,7 @@ public class ChallengeController {
             @PathVariable String userId,
             @RequestHeader("User-ID") String currentUserId) {
         
-        List<Challenge> challenges = challengeService.getUserChallenges(userId, ChallengeStatus.ACTIVE);
+        List<Challenge> challenges = challengeService.getChallengesByStatusAndUser(ChallengeStatus.ACTIVE,userId);
         
         Map<Long, Long> participantCounts = new HashMap<>();
         Map<Long, Map<String, Object>> userProgresses = new HashMap<>();
@@ -182,12 +184,38 @@ public class ChallengeController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/users/{userId}/upcoming")
+    public ResponseEntity<List<ChallengeResponseDto>> getUserUpcomingChallenges(
+            @PathVariable String userId,
+            @RequestHeader("User-ID") String currentUserId) {
+
+        List<Challenge> challenges = challengeService.getChallengesByStatusAndUser(ChallengeStatus.UPCOMING,userId);
+
+        Map<Long, Long> participantCounts = new HashMap<>();
+        Map<Long, Map<String, Object>> userProgresses = new HashMap<>();
+
+        for (Challenge challenge : challenges) {
+            participantCounts.put(challenge.getChallengeId(),
+                    challengeService.getChallengeParticipantCount(challenge.getChallengeId()));
+
+            if (currentUserId.equals(userId)) {
+                userProgresses.put(challenge.getChallengeId(),
+                        challengeService.getUserProgress(challenge.getChallengeId(), userId));
+            }
+        }
+
+        List<ChallengeResponseDto> response = ChallengeMapper.toResponseDtoList(
+                challenges, currentUserId, participantCounts, userProgresses);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/users/{userId}/completed")
     public ResponseEntity<List<ChallengeResponseDto>> getUserCompletedChallenges(
             @PathVariable String userId,
             @RequestHeader("User-ID") String currentUserId) {
         
-        List<Challenge> challenges = challengeService.getUserChallenges(userId, ChallengeStatus.COMPLETED);
+        List<Challenge> challenges = challengeService.getChallengesByStatusAndUser(ChallengeStatus.COMPLETED,userId);
         
         Map<Long, Long> participantCounts = new HashMap<>();
         Map<Long, Map<String, Object>> userProgresses = new HashMap<>();

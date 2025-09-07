@@ -21,6 +21,8 @@ public record CreateChallengeRequestDto(
         Integer timeFrameDays,
         
         @NotNull(message = "Start date is required")
-        LocalDateTime startDate
+        LocalDateTime startDate,
+
+        Integer personalTarget
 ) {
 }

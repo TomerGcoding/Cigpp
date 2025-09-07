@@ -14,7 +14,7 @@ public interface ChallengeService {
     
     // Challenge lifecycle management
     Challenge createChallenge(String title, String description, ChallengeType challengeType, 
-                            Integer timeFrameDays, LocalDateTime startDate, String creatorUserId);
+                            Integer timeFrameDays, LocalDateTime startDate, String creatorUserId,Integer personalTarget);
     
     Optional<Challenge> getChallengeById(Long challengeId);
     
@@ -59,4 +59,6 @@ public interface ChallengeService {
     Map<String, Object> getChallengeStatistics(Long challengeId);
     
     Map<String, Object> getUserChallengeStats(String userId);
+
+    List<Challenge> getChallengesByStatusAndUser(ChallengeStatus status, String userId);
 }

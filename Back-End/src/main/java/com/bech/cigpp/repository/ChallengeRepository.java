@@ -35,6 +35,10 @@ public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
     
     @Query("SELECT c FROM Challenge c JOIN c.participants cp WHERE cp.userId = :userId")
     List<Challenge> findAllUserChallenges(@Param("userId") String userId);
+
+    @Query("SELECT c FROM Challenge c WHERE c.status = :status AND c.challengeId IN " +
+            "(SELECT cp.challenge.challengeId FROM ChallengeParticipant cp WHERE cp.userId = :userId)")
+    List<Challenge> findAllByUserAndStatus(@Param ("userId") String userId, @Param("status") ChallengeStatus status);
     
     @Query("SELECT COUNT(cp) FROM ChallengeParticipant cp WHERE cp.challenge.challengeId = :challengeId")
     Long countParticipants(@Param("challengeId") Long challengeId);
