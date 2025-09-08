@@ -36,6 +36,9 @@ class CigaretteDataManager {
     this.currentUserId = userId;
     this.isInitialized = true;
     
+    // Initialize LocalCigaretteStore with user ID
+    LocalCigaretteStore.initialize(userId);
+    
     // Start auto sync
     SyncManager.startAutoSync();
     
@@ -47,6 +50,9 @@ class CigaretteDataManager {
 
   // Cleanup when user logs out
   cleanup() {
+    // Clear LocalCigaretteStore user context
+    LocalCigaretteStore.clearUserContext();
+    
     this.currentUserId = null;
     this.isInitialized = false;
     SyncManager.stopAutoSync();
@@ -346,7 +352,10 @@ class CigaretteDataManager {
   // Clear all data (for logout or reset)
   async clearAllData() {
     try {
-      await LocalCigaretteStore.clearAllData();
+      // Clear data for current user
+      if (this.currentUserId) {
+        await LocalCigaretteStore.clearAllData(this.currentUserId);
+      }
       SyncManager.clearRetryQueue();
       this.cleanup();
     } catch (error) {
