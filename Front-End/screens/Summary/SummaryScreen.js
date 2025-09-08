@@ -97,7 +97,7 @@ const SummaryScreen = () => {
       return "Set your daily target in settings to track progress.";
     }
 
-    const ratio = todayCount / preferences.targetConsumption;
+    const ratio = todayCount ;/// preferences.targetConsumption;
 
     if (ratio >= 1.5) {
       return `You've exceeded your limit significantly. Consider taking a break.`;
@@ -181,7 +181,7 @@ const SummaryScreen = () => {
         {/* Progress Circle */}
         <ProgressCircleCard
           total={todayCount}
-          limit={preferences.targetConsumption}
+          limit= {preferences.targetConsumption}
           onPress={() => navigation.navigate("Cigarette Logs")}
         />
         <View style={styles.boxContainer}>

@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   connectButton: {
-    width: 80,
+    width: 100,
     paddingVertical: 8,
   },
   connectedCard: {

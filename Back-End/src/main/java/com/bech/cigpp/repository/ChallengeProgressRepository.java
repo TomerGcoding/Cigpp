@@ -18,8 +18,8 @@ public interface ChallengeProgressRepository extends JpaRepository<ChallengeProg
     
     List<ChallengeProgress> findByUserId(String userId);
     
-    @Query("SELECT cp FROM ChallengeProgress cp WHERE cp.challenge.challengeId = :challengeId AND cp.userId = :userId")
-    List<ChallengeProgress> findByChallengeIdAndUserId(@Param("challengeId") Long challengeId, @Param("userId") String userId);
+//    @Query("SELECT cp FROM ChallengeProgress cp WHERE cp.challenge.challengeId = :challengeId AND cp.userId = :userId")
+//    List<ChallengeProgress> findByChallengeIdAndUserId(@Param("challengeId") Long challengeId, @Param("userId") String userId);
     
     @Query("SELECT cp FROM ChallengeProgress cp WHERE cp.challenge.challengeId = :challengeId AND cp.userId = :userId AND cp.date = :date")
     Optional<ChallengeProgress> findByChallengeIdAndUserIdAndDate(@Param("challengeId") Long challengeId, @Param("userId") String userId, @Param("date") LocalDate date);
@@ -58,4 +58,10 @@ public interface ChallengeProgressRepository extends JpaRepository<ChallengeProg
     
     @Query("SELECT CASE WHEN COUNT(cp) > 0 THEN true ELSE false END FROM ChallengeProgress cp WHERE cp.challenge.challengeId = :challengeId AND cp.userId = :userId AND cp.date = :date")
     boolean existsByChallengeIdAndUserIdAndDate(@Param("challengeId") Long challengeId, @Param("userId") String userId, @Param("date") LocalDate date);
+    
+    @Query("SELECT cp FROM ChallengeProgress cp WHERE cp.challenge.challengeId = :challengeId ORDER BY cp.pointsEarned DESC, cp.cigarettesSmoked ASC")
+    List<ChallengeProgress> findByChallengeIdOrderByPointsEarnedDescCigarettesSmoked(@Param("challengeId") Long challengeId);
+
+    @Query("SELECT cp FROM ChallengeProgress cp WHERE cp.challenge.challengeId = :challengeId AND cp.userId = :userId")
+    Optional<ChallengeProgress> findByChallengeIdAndUserId(@Param("challengeId") Long challengeId, @Param("userId") String userId);
 }

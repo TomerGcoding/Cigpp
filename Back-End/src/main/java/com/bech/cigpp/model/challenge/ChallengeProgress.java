@@ -26,6 +26,9 @@ public class ChallengeProgress {
     @Column(nullable = false)
     private String userId;
 
+    @Column
+    private String username;
+
     @Column(nullable = false)
     private LocalDate date;
 

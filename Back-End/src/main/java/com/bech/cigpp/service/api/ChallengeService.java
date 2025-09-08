@@ -30,6 +30,8 @@ public interface ChallengeService {
     
     void deleteChallenge(Long challengeId, String deleterUserId);
     
+    Challenge startChallenge(Long challengeId, String creatorUserId);
+    
     // Participation management  
     void joinChallenge(Long challengeId, String userId, Integer personalTarget);
     
@@ -47,13 +49,6 @@ public interface ChallengeService {
     Map<String, Object> getUserProgress(Long challengeId, String userId);
     
     void updateUserProgress(Long challengeId, String userId, LocalDate date, Integer cigarettesSmoked);
-    
-    // Challenge status management (for scheduled tasks)
-    void activateUpcomingChallenges();
-    
-    void completeActiveChallenges();
-    
-    void updateChallengeStatus(Long challengeId, ChallengeStatus status);
 
     List<Challenge> getChallengesByStatusAndUser(ChallengeStatus status, String userId);
 }

@@ -287,6 +287,30 @@ class ChallengeService {
     }
 
     /**
+     * Start challenge (Creator only)
+     */
+    async startChallenge(challengeId, userId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}/start`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "User-ID": userId,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to start challenge");
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error("Error starting challenge:", error);
+            throw error;
+        }
+    }
+
+    /**
      * Helper method to format challenge type name
      */
     getChallengeTypeName(challengeType) {

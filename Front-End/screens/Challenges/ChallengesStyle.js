@@ -126,6 +126,23 @@ export const styles = StyleSheet.create({
         width: "90%",
         alignSelf: "center",
     },
+    buttonContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        marginTop: 10,
+    },
+    actionButton: {
+        flex: 0.48,
+        marginTop: 0,
+        width: "auto",
+    },
+    joinByIdButton: {
+        backgroundColor: COLOR.primary,
+        marginTop: 10,
+        width: "90%",
+        alignSelf: "center",
+    },
     navigationButtons: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -405,5 +422,73 @@ export const styles = StyleSheet.create({
         fontFamily: FONT.regular,
         fontSize: 18,
         color: COLOR.subPrimary,
+    },
+
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalContainer: {
+        backgroundColor: COLOR.background,
+        borderRadius: 12,
+        padding: 20,
+        margin: 20,
+        minWidth: "80%",
+        maxWidth: "90%",
+    },
+    modalTitle: {
+        fontFamily: FONT.bold,
+        fontSize: 20,
+        color: COLOR.primary,
+        textAlign: "center",
+        marginBottom: 10,
+    },
+    modalSubtitle: {
+        fontFamily: FONT.regular,
+        fontSize: 16,
+        color: COLOR.subPrimary,
+        textAlign: "center",
+        marginBottom: 15,
+    },
+    modalInput: {
+        borderWidth: 1,
+        borderColor: COLOR.lightGray,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        fontFamily: FONT.regular,
+        color: COLOR.primary,
+        marginBottom: 20,
+        backgroundColor: COLOR.white,
+    },
+    modalButtons: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+    modalButton: {
+        flex: 0.48,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    modalCancelButton: {
+        backgroundColor: COLOR.lightGray,
+    },
+    modalSubmitButton: {
+        backgroundColor: COLOR.primary,
+    },
+    modalCancelText: {
+        fontFamily: FONT.medium,
+        fontSize: 16,
+        color: COLOR.subPrimary,
+    },
+    modalSubmitText: {
+        fontFamily: FONT.medium,
+        fontSize: 16,
+        color: COLOR.white,
     },
 });

@@ -89,26 +89,38 @@ const CreateChallengeScreen = ({navigation}) => {
         try {
             setIsCreating(true);
 
-            // Calculate start date (tomorrow at midnight)
-            const startDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
             const challengeData = {
                 title: challengeName.trim(),
                 description: description.trim() || null,
                 challengeType: selectedChallengeType,
                 timeFrameDays: selectedTimeFrameObj.value,
-                startDate: startDate.toISOString(),
                 personalTarget: selectedChallengeType === "DAILY_TARGET_POINTS" ? preferences.targetConsumption : null
             };
 
-            await ChallengeService.createChallenge(challengeData, user.uid);
+            const createdChallenge = await ChallengeService.createChallenge(challengeData, user.uid);
 
             Alert.alert(
-                "Challenge Created",
-                "Your challenge has been created successfully!",
+                "Challenge Created Successfully!",
+                `Your challenge "${createdChallenge.title}" has been created!\n\n🎯 Challenge ID: ${createdChallenge.challengeId}\n\nShare this ID with others so they can join your challenge!`,
                 [
                     {
-                        text: "OK",
+                        text: "Share ID",
+                        onPress: () => {
+                            // You could add sharing functionality here if needed
+                            Alert.alert(
+                                "Share Challenge ID",
+                                `Challenge ID: ${createdChallenge.challengeId}\n\nTell your friends to use the "Join Challenge" button and enter this ID!`,
+                                [
+                                    {
+                                        text: "Got it!",
+                                        onPress: () => navigation.navigate("ChallengesHome"),
+                                    }
+                                ]
+                            );
+                        },
+                    },
+                    {
+                        text: "Continue",
                         onPress: () => navigation.navigate("ChallengesHome"),
                     },
                 ]
@@ -260,12 +272,6 @@ const CreateChallengeScreen = ({navigation}) => {
                             </Text>
                         </View>
 
-                        <View style={styles.summarySection}>
-                            <Text style={styles.inputLabel}>Start Date</Text>
-                            <Text style={styles.summaryValue}>
-                                Tomorrow ({new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()})
-                            </Text>
-                        </View>
                     </View>
                 );
 
@@ -329,6 +335,15 @@ const CreateChallengeScreen = ({navigation}) => {
             </ScrollView>
 
             <View style={styles.navigationButtons}>
+
+                {currentStep === 1 && (
+                    <CustomButton
+                        title="Cancel"
+                        style={[styles.backButton, {backgroundColor: COLOR.orange}]}
+                        onPress={() => navigation.goBack()}
+                        disabled={isCreating}
+                    />
+                )}
                 {currentStep > 1 && (
                     <CustomButton
                         title="Back"
@@ -351,15 +366,6 @@ const CreateChallengeScreen = ({navigation}) => {
                         style={styles.nextButton}
                         onPress={createChallenge}
                         isLoading={isCreating}
-                        disabled={isCreating}
-                    />
-                )}
-
-                {currentStep === 1 && (
-                    <CustomButton
-                        title="Cancel"
-                        style={[styles.backButton, {backgroundColor: COLOR.orange}]}
-                        onPress={() => navigation.goBack()}
                         disabled={isCreating}
                     />
                 )}

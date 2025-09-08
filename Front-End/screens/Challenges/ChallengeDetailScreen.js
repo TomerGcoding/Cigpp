@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../contexts/AuthContext";
+import { usePreferences } from "../../contexts/PreferencesContext";
 import { styles } from "./ChallengesStyle";
 import CustomButton from "../../components/CustomButton";
 import { Ionicons } from "react-native-vector-icons";
@@ -21,6 +22,7 @@ import ChallengeService from "../../services/ChallengeService";
 const ChallengeDetailScreen = ({ navigation, route }) => {
     const { challengeId, challenge: initialChallenge } = route.params;
     const { user } = useAuth();
+    const { preferences } = usePreferences();
     const [challenge, setChallenge] = useState(initialChallenge || null);
     const [leaderboard, setLeaderboard] = useState([]);
     const [isLoading, setIsLoading] = useState(!initialChallenge);
@@ -82,34 +84,16 @@ const ChallengeDetailScreen = ({ navigation, route }) => {
             setIsJoining(true);
 
             if (challenge.challengeType === "DAILY_TARGET_POINTS") {
-                // For Daily Target Points challenges, we need to ask for personal target
-                Alert.prompt(
-                    "Set Personal Target",
-                    "Enter your daily cigarette target for this challenge:",
-                    [
-                        {
-                            text: "Cancel",
-                            style: "cancel",
-                        },
-                        {
-                            text: "Join",
-                            onPress: async (target) => {
-                                const personalTarget = parseInt(target);
-                                if (isNaN(personalTarget) || personalTarget < 1) {
-                                    Alert.alert("Invalid Target", "Please enter a valid number greater than 0.");
-                                    return;
-                                }
+                // Use user's target from preferences
+                const personalTarget = preferences.targetConsumption;
+                if (!personalTarget || personalTarget < 1) {
+                    Alert.alert("No Target Set", "Please set your daily cigarette target in Profile Settings before joining this challenge.");
+                    return;
+                }
 
-                                await ChallengeService.joinChallenge(challengeId, user.uid, personalTarget);
-                                Alert.alert("Success", "You have joined the challenge!");
-                                loadChallengeDetails();
-                            },
-                        },
-                    ],
-                    "plain-text",
-                    "",
-                    "numeric"
-                );
+                await ChallengeService.joinChallenge(challengeId, user.uid, personalTarget);
+                Alert.alert("Success", `You have joined the challenge with your daily target of ${personalTarget} cigarettes!`);
+                loadChallengeDetails();
             } else {
                 await ChallengeService.joinChallenge(challengeId, user.uid);
                 Alert.alert("Success", "You have joined the challenge!");
@@ -256,13 +240,6 @@ const ChallengeDetailScreen = ({ navigation, route }) => {
                             ]}
                         >
                             {isActive ? daysRemaining : isCompleted ? "Completed" : "Not started"}
-                        </Text>
-                    </View>
-
-                    <View style={styles.summarySection}>
-                        <Text style={styles.inputLabel}>Duration</Text>
-                        <Text style={styles.summaryValue}>
-                            {formatDate(challenge.startDate)} - {formatDate(challenge.endDate)}
                         </Text>
                     </View>
 

@@ -1,11 +1,9 @@
 package com.bech.cigpp.util;
 
 import com.bech.cigpp.controller.dto.challenge.*;
-import com.bech.cigpp.controller.dto.user.UserDto;
 import com.bech.cigpp.model.challenge.Challenge;
 import com.bech.cigpp.model.challenge.ChallengeParticipant;
 import com.bech.cigpp.model.challenge.ChallengeType;
-import com.bech.cigpp.service.api.UserService;
 
 import java.util.List;
 import java.util.Map;
@@ -62,8 +60,7 @@ public class ChallengeMapper {
 
     public static LeaderboardResponseDto toLeaderboardDto(Long challengeId, String challengeTitle,
                                                         ChallengeType challengeType,
-                                                        Map<String, Object> leaderboardData,
-                                                        UserService userService) {
+                                                        Map<String, Object> leaderboardData) {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> leaderboard = (List<Map<String, Object>>) leaderboardData.get("leaderboard");
         
@@ -71,7 +68,7 @@ public class ChallengeMapper {
                 .map(entry -> new LeaderboardEntryDto(
                         (Integer) entry.get("rank"),
                         (String) entry.get("userId"),
-                        getUserDisplayName((String) entry.get("userId"), userService),
+                        (String) entry.get("userName"), // Use username directly from progress data
                         (Integer) entry.get("cigarettesSmoked"),
                         (Integer) entry.get("points")
                 ))
@@ -125,18 +122,4 @@ public class ChallengeMapper {
                 .anyMatch(participant -> userId.equals(participant.getUserId()));
     }
 
-    private static String getUserDisplayName(String userId, UserService userService) {
-        if (userId == null) {
-            return "Unknown User";
-        }
-        
-        try {
-            UserDto user = userService.getUser(userId);
-            String username = user.username();
-            return (username != null && !username.trim().isEmpty()) ? username : userId;
-        } catch (Exception e) {
-            // If user not found or service error, fallback to userId
-            return userId;
-        }
-    }
 }

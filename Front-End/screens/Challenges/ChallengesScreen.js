@@ -8,21 +8,27 @@ import {
     ActivityIndicator,
     RefreshControl,
     Alert,
+    Modal,
+    TextInput,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../contexts/AuthContext";
+import { usePreferences } from "../../contexts/PreferencesContext";
 import { COLOR, FONT } from "../../constants/theme";
 import { styles } from "./ChallengesStyle";
 import CustomButton from "../../components/CustomButton";
 import { Ionicons } from "react-native-vector-icons";
 import ChallengeService from "../../services/ChallengeService";
 
-const ChallengesScreen = ({ navigation }) => {
+const ChallengesScreen= ({ navigation }) => {
     const { user } = useAuth();
+    const { preferences } = usePreferences();
     const [activeTab, setActiveTab] = useState("active");
     const [challenges, setChallenges] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [showJoinModal, setShowJoinModal] = useState(false);
+    const [challengeIdInput, setChallengeIdInput] = useState("");
 
     // Load challenges based on active tab
     const loadChallenges = useCallback(async () => {
@@ -83,34 +89,16 @@ const ChallengesScreen = ({ navigation }) => {
     const handleJoinChallenge = async (challengeId, challengeType) => {
         try {
             if (challengeType === "DAILY_TARGET_POINTS") {
-                // For Daily Target Points challenges, we need to ask for personal target
-                Alert.prompt(
-                    "Set Personal Target",
-                    "Enter your daily cigarette target for this challenge:",
-                    [
-                        {
-                            text: "Cancel",
-                            style: "cancel",
-                        },
-                        {
-                            text: "Join",
-                            onPress: async (target) => {
-                                const personalTarget = parseInt(target);
-                                if (isNaN(personalTarget) || personalTarget < 1) {
-                                    Alert.alert("Invalid Target", "Please enter a valid number greater than 0.");
-                                    return;
-                                }
+                // Use user's target from preferences
+                const personalTarget = preferences.targetConsumption;
+                if (!personalTarget || personalTarget < 1) {
+                    Alert.alert("No Target Set", "Please set your daily cigarette target in Profile Settings before joining this challenge.");
+                    return;
+                }
 
-                                await ChallengeService.joinChallenge(challengeId, user.uid, personalTarget);
-                                Alert.alert("Success", "You have joined the challenge!");
-                                loadChallenges();
-                            },
-                        },
-                    ],
-                    "plain-text",
-                    "",
-                    "numeric"
-                );
+                await ChallengeService.joinChallenge(challengeId, user.uid, personalTarget);
+                Alert.alert("Success", `You have joined the challenge with your daily target of ${personalTarget} cigarettes!`);
+                loadChallenges();
             } else {
                 await ChallengeService.joinChallenge(challengeId, user.uid);
                 Alert.alert("Success", "You have joined the challenge!");
@@ -143,6 +131,144 @@ const ChallengesScreen = ({ navigation }) => {
                         } catch (error) {
                             console.error("Error leaving challenge:", error);
                             Alert.alert("Error", "Failed to leave challenge. Please try again.");
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    // Handle joining challenge by ID
+    const handleJoinChallengeById = () => {
+        console.log("Joining challenge by ID");
+        setShowJoinModal(true);
+        setChallengeIdInput("");
+    };
+
+    const handleJoinModalSubmit = async () => {
+        if (!challengeIdInput || challengeIdInput.trim().length === 0) {
+            Alert.alert("Invalid Input", "Please enter a valid Challenge ID.");
+            return;
+        }
+
+        const trimmedId = challengeIdInput.trim();
+        const parsedId = parseInt(trimmedId);
+        
+        if (isNaN(parsedId) || parsedId <= 0) {
+            Alert.alert("Invalid Challenge ID", "Please enter a valid numeric Challenge ID.");
+            return;
+        }
+
+        try {
+            // First, get the challenge details to check type and validate
+            const challenge = await ChallengeService.getChallengeById(parsedId, user.uid);
+            
+            if (!challenge) {
+                Alert.alert("Challenge Not Found", "No challenge found with the provided ID.");
+                return;
+            }
+
+            if (challenge.status === "COMPLETED") {
+                Alert.alert("Challenge Completed", "This challenge has already been completed and cannot be joined.");
+                return;
+            }
+
+            if (challenge.joined) {
+                Alert.alert("Already Joined", "You are already participating in this challenge.");
+                return;
+            }
+
+            setShowJoinModal(false);
+
+            // If it's a Daily Target Points challenge, use user's target from preferences
+            if (challenge.challengeType === "DAILY_TARGET_POINTS") {
+                const personalTarget = preferences.targetConsumption;
+                if (!personalTarget || personalTarget < 1) {
+                    Alert.alert("No Target Set", "Please set your daily cigarette target in Profile Settings before joining this challenge.");
+                    return;
+                }
+
+                Alert.alert(
+                    "Confirm Join",
+                    `Do you want to join the challenge "${challenge.title}" with your daily target of ${personalTarget} cigarettes?`,
+                    [
+                        {
+                            text: "Cancel",
+                            style: "cancel",
+                        },
+                        {
+                            text: "Join",
+                            onPress: async () => {
+                                try {
+                                    await ChallengeService.joinChallenge(parsedId, user.uid, personalTarget);
+                                    Alert.alert("Success", `You have joined the challenge "${challenge.title}"!`);
+                                    loadChallenges();
+                                } catch (joinError) {
+                                    console.error("Error joining challenge:", joinError);
+                                    Alert.alert("Error", "Failed to join challenge. Please try again.");
+                                }
+                            },
+                        },
+                    ]
+                );
+            } else {
+                // For other challenge types, join directly
+                Alert.alert(
+                    "Confirm Join",
+                    `Do you want to join the challenge "${challenge.title}"?`,
+                    [
+                        {
+                            text: "Cancel",
+                            style: "cancel",
+                        },
+                        {
+                            text: "Join",
+                            onPress: async () => {
+                                try {
+                                    await ChallengeService.joinChallenge(parsedId, user.uid);
+                                    Alert.alert("Success", `You have joined the challenge "${challenge.title}"!`);
+                                    loadChallenges();
+                                } catch (joinError) {
+                                    console.error("Error joining challenge:", joinError);
+                                    Alert.alert("Error", "Failed to join challenge. Please try again.");
+                                }
+                            },
+                        },
+                    ]
+                );
+            }
+        } catch (error) {
+            console.error("Error fetching challenge:", error);
+            if (error.message.includes("404") || error.message.includes("not found")) {
+                Alert.alert("Challenge Not Found", "No challenge found with the provided ID.");
+            } else {
+                Alert.alert("Error", "Failed to fetch challenge details. Please check the ID and try again.");
+            }
+        }
+    };
+
+
+    // Handle starting a challenge (Creator only)
+    const handleStartChallenge = async (challengeId, challengeTitle) => {
+        Alert.alert(
+            "Start Challenge",
+            `Are you ready to start "${challengeTitle}"? This will set the start date to now and begin the challenge period.`,
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel",
+                },
+                {
+                    text: "Start Challenge",
+                    style: "default",
+                    onPress: async () => {
+                        try {
+                            await ChallengeService.startChallenge(challengeId, user.uid);
+                            Alert.alert("Success", `Challenge "${challengeTitle}" has been started!`);
+                            loadChallenges();
+                        } catch (error) {
+                            console.error("Error starting challenge:", error);
+                            Alert.alert("Error", "Failed to start challenge. Please try again.");
                         }
                     },
                 },
@@ -231,7 +357,20 @@ const ChallengesScreen = ({ navigation }) => {
 
                 {/* Action buttons */}
                 <View style={styles.challengeActions}>
-                    {!isJoined && !isCompleted && (
+                    {/* Start Challenge button for creators of upcoming challenges */}
+                    {isUpcoming && item.creatorUserId === user.uid && (
+                        <TouchableOpacity
+                            style={[styles.joinButton, { backgroundColor: COLOR.green }]}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                handleStartChallenge(item.challengeId, item.title);
+                            }}
+                        >
+                            <Text style={styles.joinButtonText}>Start Challenge</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {!isJoined && !isCompleted && item.creatorUserId !== user.uid && (
                         <TouchableOpacity
                             style={styles.joinButton}
                             onPress={(e) => {
@@ -378,11 +517,59 @@ const ChallengesScreen = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
             />
 
-            <CustomButton
-                title="Create New Challenge"
-                style={styles.createButton}
-                onPress={() => navigation.navigate("CreateChallenge")}
-            />
+            <View style={styles.buttonContainer}>
+                <CustomButton
+                    title="Join Challenge"
+                    style={[styles.actionButton, styles.joinByIdButton]}
+                    onPress={handleJoinChallengeById}
+                />
+                <CustomButton
+                    title="Create New Challenge"
+                    style={[styles.actionButton, styles.createButton]}
+                    onPress={() => navigation.navigate("CreateChallenge")}
+                />
+            </View>
+
+            {/* Join Challenge Modal */}
+            <Modal
+                visible={showJoinModal}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setShowJoinModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Join Challenge</Text>
+                        <Text style={styles.modalSubtitle}>Enter the Challenge ID you want to join:</Text>
+                        
+                        <TextInput
+                            style={styles.modalInput}
+                            value={challengeIdInput}
+                            onChangeText={setChallengeIdInput}
+                            placeholder="Challenge ID"
+                            keyboardType="numeric"
+                            autoFocus={true}
+                        />
+                        
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalCancelButton]}
+                                onPress={() => setShowJoinModal(false)}
+                            >
+                                <Text style={styles.modalCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalSubmitButton]}
+                                onPress={handleJoinModalSubmit}
+                            >
+                                <Text style={styles.modalSubmitText}>Next</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
         </SafeAreaView>
     );
 };

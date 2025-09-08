@@ -4,7 +4,6 @@ import com.bech.cigpp.controller.dto.challenge.*;
 import com.bech.cigpp.model.challenge.Challenge;
 import com.bech.cigpp.model.challenge.ChallengeStatus;
 import com.bech.cigpp.service.api.ChallengeService;
-import com.bech.cigpp.service.api.UserService;
 import com.bech.cigpp.util.ChallengeMapper;
 import jakarta.validation.Valid;
 import org.apache.coyote.Response;
@@ -22,11 +21,9 @@ import java.util.Optional;
 public class ChallengeController {
 
     private final ChallengeService challengeService;
-    private final UserService userService;
 
-    public ChallengeController(ChallengeService challengeService, UserService userService) {
+    public ChallengeController(ChallengeService challengeService) {
         this.challengeService = challengeService;
-        this.userService = userService;
     }
 
     @PostMapping
@@ -153,7 +150,7 @@ public class ChallengeController {
         Map<String, Object> leaderboardData = challengeService.getLeaderboard(id);
         
         LeaderboardResponseDto response = ChallengeMapper.toLeaderboardDto(
-                id, challenge.getTitle(), challenge.getChallengeType(), leaderboardData, userService);
+                id, challenge.getTitle(), challenge.getChallengeType(), leaderboardData);
         
         return ResponseEntity.ok(response);
     }
@@ -269,6 +266,19 @@ public class ChallengeController {
         
         Map<String, Object> progress = challengeService.getUserProgress(id, userId);
         ChallengeProgressResponseDto response = ChallengeMapper.mapToProgressDto(progress);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/start")
+    public ResponseEntity<ChallengeResponseDto> startChallenge(
+            @PathVariable Long id,
+            @RequestHeader("User-ID") String userId) {
+        
+        Challenge challenge = challengeService.startChallenge(id, userId);
+        Long participantCount = challengeService.getChallengeParticipantCount(id);
+        Map<String, Object> userProgress = challengeService.getUserProgress(id, userId);
+        
+        ChallengeResponseDto response = ChallengeMapper.toResponseDto(challenge, userId, participantCount, userProgress);
         return ResponseEntity.ok(response);
     }
 }
