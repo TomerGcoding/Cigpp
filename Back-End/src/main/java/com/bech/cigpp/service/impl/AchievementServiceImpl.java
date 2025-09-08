@@ -205,9 +205,28 @@ public class AchievementServiceImpl implements AchievementService {
 
     private boolean hasCleanDay(String userId) {
         ZoneId zone = ZoneId.systemDefault();
-        LocalDate yesterday = LocalDate.now(zone).minusDays(1); // יום שהסתיים
+        LocalDate yesterday = LocalDate.now(zone).minusDays(1);
+
+        // First, check if user has any cigarette logs at all
+        List<CigaretteLog> userLogs = cigaretteLogRepository.findByUserId(userId);
+        if (userLogs.isEmpty()) {
+            return false; // No logs means no tracking history, so can't have a "clean day"
+        }
+
+        // Find the date of the first cigarette log
+        LocalDate firstLogDate = userLogs.stream()
+                .map(log -> log.getTimestamp().atZone(zone).toLocalDate())
+                .min(LocalDate::compareTo)
+                .orElse(null);
+
+        // Yesterday must be after the first log date to be considered a valid "clean day"
+        if (yesterday.isBefore(firstLogDate) || yesterday.equals(firstLogDate)) {
+            return false;
+        }
+
+        // Now check if yesterday had zero cigarettes
         Instant start = yesterday.atStartOfDay(zone).toInstant();
-        Instant end   = yesterday.plusDays(1).atStartOfDay(zone).toInstant();
+        Instant end = yesterday.plusDays(1).atStartOfDay(zone).toInstant();
 
         long dailyCount = cigaretteLogRepository.countByUserIdAndTimestampBetween(userId, start, end);
         return dailyCount == 0;
