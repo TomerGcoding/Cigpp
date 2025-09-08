@@ -271,17 +271,4 @@ public class ChallengeController {
         ChallengeProgressResponseDto response = ChallengeMapper.mapToProgressDto(progress);
         return ResponseEntity.ok(response);
     }
-
-    @GetMapping("/{id}/statistics")
-    public ResponseEntity<ChallengeStatisticsResponseDto> getChallengeStatistics(@PathVariable Long id) {
-        Map<String, Object> statistics = challengeService.getChallengeStatistics(id);
-        ChallengeStatisticsResponseDto response = ChallengeMapper.toStatisticsDto(statistics);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/users/{userId}/statistics")
-    public ResponseEntity<Map<String, Object>> getUserChallengeStatistics(@PathVariable String userId) {
-        Map<String, Object> statistics = challengeService.getUserChallengeStats(userId);
-        return ResponseEntity.ok(statistics);
-    }
 }

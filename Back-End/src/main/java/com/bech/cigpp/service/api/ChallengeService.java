@@ -54,11 +54,6 @@ public interface ChallengeService {
     void completeActiveChallenges();
     
     void updateChallengeStatus(Long challengeId, ChallengeStatus status);
-    
-    // Statistics and analytics
-    Map<String, Object> getChallengeStatistics(Long challengeId);
-    
-    Map<String, Object> getUserChallengeStats(String userId);
 
     List<Challenge> getChallengesByStatusAndUser(ChallengeStatus status, String userId);
 }

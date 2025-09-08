@@ -342,35 +342,6 @@ public class ChallengeServiceImpl implements ChallengeService {
         challengeRepository.save(challenge);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Map<String, Object> getChallengeStatistics(Long challengeId) {
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Challenge not found with id: " + challengeId));
-        
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("challengeId", challengeId);
-        stats.put("title", challenge.getTitle());
-        stats.put("status", challenge.getStatus());
-        stats.put("participantCount", getChallengeParticipantCount(challengeId));
-        stats.put("activeParticipants", progressRepository.countActiveParticipants(challengeId));
-        
-        return stats;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Map<String, Object> getUserChallengeStats(String userId) {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("userId", userId);
-        stats.put("totalChallenges", participantRepository.countByUserId(userId));
-        stats.put("activeChallenges", getUserChallenges(userId, ChallengeStatus.ACTIVE).size());
-        stats.put("completedChallenges", getUserChallenges(userId, ChallengeStatus.COMPLETED).size());
-        stats.put("createdChallenges", getChallengesByCreator(userId).size());
-        
-        return stats;
-    }
-
     // Private helper methods
     
     private void validateChallengeInput(String title, ChallengeType challengeType, 

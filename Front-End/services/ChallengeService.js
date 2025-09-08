@@ -287,58 +287,6 @@ class ChallengeService {
     }
 
     /**
-     * Get challenge statistics
-     */
-    async getChallengeStatistics(challengeId) {
-        try {
-            const response = await fetch(
-                `${API_BASE_URL}/challenges/${challengeId}/statistics`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error("Failed to fetch challenge statistics");
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error("Error fetching challenge statistics:", error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get user challenge statistics
-     */
-    async getUserChallengeStatistics(userId) {
-        try {
-            const response = await fetch(
-                `${API_BASE_URL}/challenges/users/${userId}/statistics`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error("Failed to fetch user challenge statistics");
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error("Error fetching user challenge statistics:", error);
-            throw error;
-        }
-    }
-
-    /**
      * Helper method to format challenge type name
      */
     getChallengeTypeName(challengeType) {
