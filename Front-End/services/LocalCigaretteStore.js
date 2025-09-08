@@ -2,10 +2,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class LocalCigaretteStore {
   constructor() {
-    this.STORAGE_KEY = 'cigarette_logs';
-    this.TODAY_CACHE_KEY = 'today_cigarette_logs';
-    this.LAST_SYNC_KEY = 'last_sync_timestamp';
+    this.BASE_STORAGE_KEY = 'cigarette_logs';
+    this.BASE_TODAY_CACHE_KEY = 'today_cigarette_logs';
+    this.BASE_LAST_SYNC_KEY = 'last_sync_timestamp';
     this.listeners = new Set();
+    this.currentUserId = null;
+  }
+
+  // Get user-specific storage keys
+  getStorageKeys(userId) {
+    if (!userId) {
+      throw new Error('User ID is required for storage operations');
+    }
+    return {
+      STORAGE_KEY: `${this.BASE_STORAGE_KEY}_${userId}`,
+      TODAY_CACHE_KEY: `${this.BASE_TODAY_CACHE_KEY}_${userId}`,
+      LAST_SYNC_KEY: `${this.BASE_LAST_SYNC_KEY}_${userId}`
+    };
+  }
+
+  // Initialize store with user ID
+  initialize(userId) {
+    this.currentUserId = userId;
+  }
+
+  // Clear user context on logout
+  clearUserContext() {
+    this.currentUserId = null;
   }
 
   // Generate unique local ID
@@ -36,9 +59,14 @@ class LocalCigaretteStore {
   }
 
   // Get all cigarette logs
-  async getAllLogs() {
+  async getAllLogs(userId = null) {
     try {
-      const data = await AsyncStorage.getItem(this.STORAGE_KEY);
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      const { STORAGE_KEY } = this.getStorageKeys(userIdToUse);
+      const data = await AsyncStorage.getItem(STORAGE_KEY);
       return data ? JSON.parse(data) : [];
     } catch (error) {
       console.error('Error getting all logs:', error);
@@ -47,12 +75,17 @@ class LocalCigaretteStore {
   }
 
   // Get today's cigarette logs (optimized)
-  async getTodayLogs() {
+  async getTodayLogs(userId = null) {
     try {
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      const { TODAY_CACHE_KEY } = this.getStorageKeys(userIdToUse);
       const todayString = this.getTodayDateString();
       
       // First try to get from today's cache
-      const cachedData = await AsyncStorage.getItem(this.TODAY_CACHE_KEY);
+      const cachedData = await AsyncStorage.getItem(TODAY_CACHE_KEY);
       if (cachedData) {
         const { date, logs } = JSON.parse(cachedData);
         if (date === todayString) {
@@ -61,14 +94,14 @@ class LocalCigaretteStore {
       }
 
       // If cache miss or different day, get from main storage
-      const allLogs = await this.getAllLogs();
+      const allLogs = await this.getAllLogs(userIdToUse);
       const todayLogs = allLogs.filter(log => {
         const logDate = new Date(log.timestamp).toISOString().split('T')[0];
         return logDate === todayString && log.syncStatus !== 'deleted_pending';
       });
 
       // Update cache
-      await AsyncStorage.setItem(this.TODAY_CACHE_KEY, JSON.stringify({
+      await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify({
         date: todayString,
         logs: todayLogs
       }));
@@ -83,10 +116,16 @@ class LocalCigaretteStore {
   // Add a new cigarette log
   async addLog(logData) {
     try {
+      const userId = logData.userId || this.currentUserId;
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      const { STORAGE_KEY, TODAY_CACHE_KEY } = this.getStorageKeys(userId);
+      
       const newLog = {
         localId: this.generateLocalId(),
         serverId: null,
-        userId: logData.userId,
+        userId: userId,
         description: logData.description || 'Manual',
         timestamp: logData.timestamp || new Date().toISOString(),
         syncStatus: 'pending',
@@ -95,18 +134,18 @@ class LocalCigaretteStore {
       };
 
       // Add to main storage
-      const allLogs = await this.getAllLogs();
+      const allLogs = await this.getAllLogs(userId);
       allLogs.push(newLog);
-      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(allLogs));
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allLogs));
 
       // Update today's cache if it's today's log
       const logDate = new Date(newLog.timestamp).toISOString().split('T')[0];
       const todayString = this.getTodayDateString();
       
       if (logDate === todayString) {
-        const todayLogs = await this.getTodayLogs();
+        const todayLogs = await this.getTodayLogs(userId);
         todayLogs.push(newLog);
-        await AsyncStorage.setItem(this.TODAY_CACHE_KEY, JSON.stringify({
+        await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify({
           date: todayString,
           logs: todayLogs
         }));
@@ -123,9 +162,15 @@ class LocalCigaretteStore {
   }
 
   // Update a log's sync status
-  async updateLogSyncStatus(localId, syncStatus, serverId = null) {
+  async updateLogSyncStatus(localId, syncStatus, serverId = null, userId = null) {
     try {
-      const allLogs = await this.getAllLogs();
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      const { STORAGE_KEY } = this.getStorageKeys(userIdToUse);
+      
+      const allLogs = await this.getAllLogs(userIdToUse);
       const logIndex = allLogs.findIndex(log => log.localId === localId);
       
       if (logIndex === -1) {
@@ -139,14 +184,14 @@ class LocalCigaretteStore {
         allLogs[logIndex].serverId = serverId;
       }
 
-      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(allLogs));
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allLogs));
 
       // Update today's cache if it's today's log
       const logDate = new Date(allLogs[logIndex].timestamp).toISOString().split('T')[0];
       const todayString = this.getTodayDateString();
       
       if (logDate === todayString) {
-        await this.refreshTodayCache();
+        await this.refreshTodayCache(userIdToUse);
       }
 
       this.notifyListeners('log_updated', allLogs[logIndex]);
@@ -159,9 +204,15 @@ class LocalCigaretteStore {
   }
 
   // Delete a log by localId
-  async deleteLog(localId) {
+  async deleteLog(localId, userId = null) {
     try {
-      const allLogs = await this.getAllLogs();
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      const { STORAGE_KEY } = this.getStorageKeys(userIdToUse);
+      
+      const allLogs = await this.getAllLogs(userIdToUse);
       const logIndex = allLogs.findIndex(log => log.localId === localId);
       
       if (logIndex === -1) {
@@ -179,14 +230,14 @@ class LocalCigaretteStore {
         allLogs.splice(logIndex, 1);
       }
 
-      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(allLogs));
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allLogs));
 
       // Update today's cache
       const logDate = new Date(deletedLog.timestamp).toISOString().split('T')[0];
       const todayString = this.getTodayDateString();
       
       if (logDate === todayString) {
-        await this.refreshTodayCache();
+        await this.refreshTodayCache(userIdToUse);
       }
 
       this.notifyListeners('log_deleted', deletedLog);
@@ -199,9 +250,14 @@ class LocalCigaretteStore {
   }
 
   // Get logs that need to be synced
-  async getUnsyncedLogs() {
+  async getUnsyncedLogs(userId = null) {
     try {
-      const allLogs = await this.getAllLogs();
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      
+      const allLogs = await this.getAllLogs(userIdToUse);
       return allLogs.filter(log => 
         log.syncStatus === 'pending' || 
         log.syncStatus === 'failed' ||
@@ -214,16 +270,22 @@ class LocalCigaretteStore {
   }
 
   // Refresh today's cache from main storage
-  async refreshTodayCache() {
+  async refreshTodayCache(userId = null) {
     try {
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      const { TODAY_CACHE_KEY } = this.getStorageKeys(userIdToUse);
+      
       const todayString = this.getTodayDateString();
-      const allLogs = await this.getAllLogs();
+      const allLogs = await this.getAllLogs(userIdToUse);
       const todayLogs = allLogs.filter(log => {
         const logDate = new Date(log.timestamp).toISOString().split('T')[0];
         return logDate === todayString && log.syncStatus !== 'deleted_pending';
       });
 
-      await AsyncStorage.setItem(this.TODAY_CACHE_KEY, JSON.stringify({
+      await AsyncStorage.setItem(TODAY_CACHE_KEY, JSON.stringify({
         date: todayString,
         logs: todayLogs
       }));
@@ -236,9 +298,15 @@ class LocalCigaretteStore {
   }
 
   // Merge server data with local data
-  async mergeServerData(serverLogs) {
+  async mergeServerData(serverLogs, userId = null) {
     try {
-      const allLogs = await this.getAllLogs();
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      const { STORAGE_KEY } = this.getStorageKeys(userIdToUse);
+      
+      const allLogs = await this.getAllLogs(userIdToUse);
       const mergedLogs = [...allLogs];
       let hasChanges = false;
 
@@ -279,8 +347,8 @@ class LocalCigaretteStore {
       }
 
       if (hasChanges) {
-        await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(mergedLogs));
-        await this.refreshTodayCache();
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(mergedLogs));
+        await this.refreshTodayCache(userIdToUse);
         this.notifyListeners('data_merged', { serverLogs, localLogs: mergedLogs });
       }
 
@@ -292,9 +360,15 @@ class LocalCigaretteStore {
   }
 
   // Get last sync timestamp
-  async getLastSyncTimestamp() {
+  async getLastSyncTimestamp(userId = null) {
     try {
-      const timestamp = await AsyncStorage.getItem(this.LAST_SYNC_KEY);
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      const { LAST_SYNC_KEY } = this.getStorageKeys(userIdToUse);
+      
+      const timestamp = await AsyncStorage.getItem(LAST_SYNC_KEY);
       return timestamp ? new Date(timestamp) : null;
     } catch (error) {
       console.error('Error getting last sync timestamp:', error);
@@ -303,10 +377,16 @@ class LocalCigaretteStore {
   }
 
   // Update last sync timestamp
-  async updateLastSyncTimestamp() {
+  async updateLastSyncTimestamp(userId = null) {
     try {
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      const { LAST_SYNC_KEY } = this.getStorageKeys(userIdToUse);
+      
       const now = new Date().toISOString();
-      await AsyncStorage.setItem(this.LAST_SYNC_KEY, now);
+      await AsyncStorage.setItem(LAST_SYNC_KEY, now);
       return now;
     } catch (error) {
       console.error('Error updating last sync timestamp:', error);
@@ -314,14 +394,29 @@ class LocalCigaretteStore {
   }
 
   // Clear all data (for debugging or logout)
-  async clearAllData() {
+  async clearAllData(userId = null) {
     try {
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        // If no user ID, clear the current user context only
+        this.clearUserContext();
+        return;
+      }
+      
+      const { STORAGE_KEY, TODAY_CACHE_KEY, LAST_SYNC_KEY } = this.getStorageKeys(userIdToUse);
+      
       await AsyncStorage.multiRemove([
-        this.STORAGE_KEY,
-        this.TODAY_CACHE_KEY,
-        this.LAST_SYNC_KEY
+        STORAGE_KEY,
+        TODAY_CACHE_KEY,
+        LAST_SYNC_KEY
       ]);
-      this.notifyListeners('data_cleared');
+      
+      // Clear user context if clearing current user's data
+      if (userIdToUse === this.currentUserId) {
+        this.clearUserContext();
+      }
+      
+      this.notifyListeners('data_cleared', { userId: userIdToUse });
     } catch (error) {
       console.error('Error clearing all data:', error);
       throw error;
@@ -329,9 +424,14 @@ class LocalCigaretteStore {
   }
 
   // Get sync statistics
-  async getSyncStats() {
+  async getSyncStats(userId = null) {
     try {
-      const allLogs = await this.getAllLogs();
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        return { total: 0, synced: 0, pending: 0, failed: 0, deletedPending: 0 };
+      }
+      
+      const allLogs = await this.getAllLogs(userIdToUse);
       const stats = {
         total: allLogs.length,
         synced: allLogs.filter(log => log.syncStatus === 'synced').length,
@@ -348,15 +448,21 @@ class LocalCigaretteStore {
   }
 
   // Remove log completely from local storage (used by SyncManager)
-  async removeLogCompletely(localId) {
+  async removeLogCompletely(localId, userId = null) {
     try {
-      const allLogs = await this.getAllLogs();
+      const userIdToUse = userId || this.currentUserId;
+      if (!userIdToUse) {
+        throw new Error('User ID is required');
+      }
+      const { STORAGE_KEY } = this.getStorageKeys(userIdToUse);
+      
+      const allLogs = await this.getAllLogs(userIdToUse);
       const filteredLogs = allLogs.filter(log => log.localId !== localId);
       
-      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(filteredLogs));
-      await this.refreshTodayCache();
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filteredLogs));
+      await this.refreshTodayCache(userIdToUse);
       
-      this.notifyListeners('log_removed_completely', { localId });
+      this.notifyListeners('log_removed_completely', { localId, userId: userIdToUse });
     } catch (error) {
       console.error('Error removing log completely:', error);
       throw error;

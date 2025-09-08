@@ -13,14 +13,16 @@ import CustomClickableIcon from "../../components/CustomClickableIcon";
 import { COLOR, FONT } from "../../constants/theme";
 import SettingsList from "../../components/SettingsList";
 import CustomButton from "../../components/CustomButton";
+import {usePreferences} from "../../contexts/PreferencesContext";
 
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
+  let {preferences} = usePreferences();
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.userDetailsContainer}>
-        <TouchableNativeFeedback onPress={() => console.log(user)}>
+        <TouchableNativeFeedback onPress={() => console.log(preferences)}>
           <Image
             source={require("../../assets/icons/duck.png")}
             resizeMode="cover"
