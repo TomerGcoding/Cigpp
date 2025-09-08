@@ -25,7 +25,6 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       // Cleanup data manager before signing out
-      await CigaretteDataManager.clearAllData();
       await FIREBASE_AUTH.signOut();
       // Firebase handles auth persistence automatically
       // LocalCigaretteStore and PreferencesContext cleanup is handled by their respective contexts

@@ -4,10 +4,7 @@ package com.bech.cigpp.controller;
 import com.bech.cigpp.controller.dto.user.UserDto;
 import com.bech.cigpp.service.api.UserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/user")
 @RestController
@@ -23,5 +20,9 @@ public class UserController {
     public ResponseEntity<UserDto> addUserProfile(@RequestBody UserDto dto) {
         UserDto response = userService.addUser(dto);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/ping") String checkServerHealth() {
+        return "Server is running!";
     }
 }
