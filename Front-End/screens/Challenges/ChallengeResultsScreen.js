@@ -1,207 +1,345 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  SafeAreaView,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Share,
+    SafeAreaView,
+    Text,
+    View,
+    ScrollView,
+    TouchableOpacity,
+    Alert,
+    Share,
+    ActivityIndicator,
+    RefreshControl,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useAuth } from "../../contexts/AuthContext";
 import { styles } from "./ChallengesStyle";
-import { mockChallenges } from "./mockData";
 import CustomButton from "../../components/CustomButton";
 import { Ionicons } from "react-native-vector-icons";
 import { COLOR } from "../../constants/theme";
+import ChallengeService from "../../services/ChallengeService";
 
 const ChallengeResultsScreen = ({ navigation, route }) => {
-  const { challengeId } = route.params;
-  const [challenge, setChallenge] = useState(null);
+    const { challengeId, challenge: initialChallenge } = route.params;
+    const { user } = useAuth();
+    const [challenge, setChallenge] = useState(initialChallenge || null);
+    const [leaderboard, setLeaderboard] = useState([]);
+    const [userStats, setUserStats] = useState(null);
+    const [isLoading, setIsLoading] = useState(!initialChallenge);
+    const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    // In a real app, this would be an API call
-    const foundChallenge = mockChallenges.find((c) => c.id === challengeId);
-    setChallenge(foundChallenge);
-  }, [challengeId]);
+    // Load challenge results
+    const loadChallengeResults = useCallback(async () => {
+        if (!user?.uid) return;
 
-  const shareResults = async () => {
-    try {
-      const message =
-        challenge.winner === "You"
-          ? `I won the "${challenge.title}" challenge on Cig++! 🏆`
-          : `I just completed the "${challenge.title}" challenge on Cig++. ${challenge.winner} was the winner!`;
+        try {
+            setIsLoading(true);
 
-      await Share.share({
-        message,
-      });
-    } catch (error) {
-      Alert.alert("Error", "Failed to share the results");
-    }
-  };
+            // Load challenge details, leaderboard, and user progress in parallel
+            const [challengeData, leaderboardData, userProgress] = await Promise.all([
+                challenge ? Promise.resolve(challenge) : ChallengeService.getChallengeById(challengeId, user.uid),
+                ChallengeService.getChallengeLeaderboard(challengeId),
+                ChallengeService.getUserProgress(challengeId, user.uid).catch(() => null)
+            ]);
 
-  const startSimilarChallenge = () => {
-    // In a real app, this would pre-fill the challenge creation form with similar values
-    navigation.navigate("CreateChallenge", {
-      similarTo: challenge.title,
-      timeFrame: challenge.timeFrame,
-      type: challenge.type,
-    });
-  };
+            setChallenge(challengeData);
+            setLeaderboard(leaderboardData.leaderboard || []);
+            setUserStats(userProgress);
+        } catch (error) {
+            console.error("Error loading challenge results:", error);
+            Alert.alert("Error", "Failed to load challenge results. Please try again.");
+            navigation.goBack();
+        } finally {
+            setIsLoading(false);
+        }
+    }, [challengeId, user?.uid, navigation, challenge]);
 
-  if (!challenge) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.noChallengesContainer}>
-          <Text>Loading challenge results...</Text>
-        </View>
-      </SafeAreaView>
+    // Refresh data (pull to refresh)
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await loadChallengeResults();
+        setRefreshing(false);
+    }, [loadChallengeResults]);
+
+    // Load data when component mounts
+    useEffect(() => {
+        if (user?.uid) {
+            loadChallengeResults();
+        }
+    }, [loadChallengeResults, user?.uid]);
+
+    // Refresh data when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            if (user?.uid) {
+                loadChallengeResults();
+            }
+        }, [loadChallengeResults, user?.uid])
     );
-  }
 
-  // Get your data from the leaderboard
-  const yourData = challenge.leaderboard.find((p) => p.name === "You");
-  const yourRank = challenge.leaderboard.findIndex((p) => p.name === "You") + 1;
+    // Share results
+    const shareResults = async () => {
+        if (!challenge || !userStats) return;
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <View style={styles.congratsContainer}>
-          <Ionicons
-            name="trophy"
-            size={80}
-            color={challenge.winner === "You" ? COLOR.orange : COLOR.primary}
-          />
-          <Text style={styles.congratsText}>Challenge Complete!</Text>
-          <Text style={styles.headerText}>{challenge.title}</Text>
+        try {
+            const userRank = userStats.currentRank;
+            const isWinner = userRank === 1;
+            const winner = leaderboard.find(p => p.rank === 1);
+            const winnerName = winner?.userId === user.uid ? "You" : (winner?.userName || "Someone");
 
-          <View style={{ marginVertical: 20 }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontFamily: "MontserratRegular",
-                textAlign: "center",
-              }}
-            >
-              Winner
-            </Text>
-            <Text style={styles.winnerName}>
-              {challenge.winner}
-              {challenge.winner === "You" && " 🎉"}
-            </Text>
-          </View>
-        </View>
+            const message = isWinner
+                ? `I won the "${challenge.title}" challenge on Cig++! 🏆`
+                : `I just completed the "${challenge.title}" challenge on Cig++. ${winnerName} was the winner!`;
 
-        <View style={styles.formContainer}>
-          <View style={styles.summarySection}>
-            <Text style={styles.inputLabel}>Challenge Details</Text>
-            <Text style={styles.summaryValue}>{challenge.typeName}</Text>
-            <Text style={styles.summaryValue}>{challenge.timeFrame}</Text>
-            <Text style={styles.summaryValue}>
-              Participants: {challenge.participants}
-            </Text>
-          </View>
+            await Share.share({ message });
+        } catch (error) {
+            Alert.alert("Error", "Failed to share the results");
+        }
+    };
 
-          <View style={styles.summarySection}>
-            <Text style={styles.inputLabel}>Your Performance</Text>
+    // Start similar challenge
+    const startSimilarChallenge = () => {
+        if (!challenge) return;
 
-            <View style={styles.statContainer}>
-              <Text style={styles.statTitle}>Final Rank</Text>
-              <Text style={styles.statValue}>
-                #{yourRank} out of {challenge.participants}
-              </Text>
-            </View>
+        navigation.navigate("CreateChallenge", {
+            prefill: {
+                challengeType: challenge.challengeType,
+                timeFrameDays: challenge.timeFrameDays,
+                description: `Similar to "${challenge.title}"`
+            }
+        });
+    };
 
-            <View style={styles.statContainer}>
-              <Text style={styles.statTitle}>
-                {challenge.type === 1
-                  ? "Total Cigarettes Smoked"
-                  : "Total Points Earned"}
-              </Text>
-              <Text style={styles.statValue}>
-                {challenge.type === 1 ? yourData.cigSmoked : yourData.points}
-              </Text>
-            </View>
+    // Format date for display
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    };
 
-            {challenge.type === 1 && (
-              <View style={styles.statContainer}>
-                <Text style={styles.statTitle}>Cigarettes Saved</Text>
-                <Text style={styles.statValue}>
-                  {Math.max(
-                    0,
-                    challenge.personalProgress.personalTarget *
-                      (challenge.timeFrame === "1 Week"
-                        ? 7
-                        : challenge.timeFrame === "2 Weeks"
-                        ? 14
-                        : 30) -
-                      yourData.cigSmoked
-                  )}
-                </Text>
-              </View>
-            )}
-          </View>
+    // Calculate cigarettes saved (for LEAST_SMOKED_WINS challenges)
+    const calculateCigarettesSaved = () => {
+        if (!challenge || !userStats || challenge.challengeType !== "LEAST_SMOKED_WINS") {
+            return 0;
+        }
 
-          <View style={styles.leaderboard}>
-            <Text style={styles.leaderboardTitle}>Final Leaderboard</Text>
+        // Estimate based on a hypothetical baseline (e.g., user's normal consumption)
+        // In a real app, you might store this data or calculate it differently
+        const estimatedDailyConsumption = 20; // Placeholder
+        const totalDays = challenge.timeFrameDays;
+        const estimatedTotal = estimatedDailyConsumption * totalDays;
+        const actualSmoked = userStats.totalCigarettesSmoked || 0;
 
-            {challenge.leaderboard.map((participant, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.participantCard,
-                  index === 0 && {
-                    backgroundColor: COLOR.lightBackground,
-                    borderWidth: 2,
-                    borderColor: COLOR.orange,
-                  },
-                ]}
-              >
-                <Text style={styles.rankNumber}>#{index + 1}</Text>
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>
-                    {participant.name}
-                    {index === 0 && " 👑"}
-                  </Text>
-                  <Text style={styles.userStats}>
-                    {challenge.type === 1
-                      ? `${participant.cigSmoked} cigarettes smoked`
-                      : `${participant.points} points`}
-                  </Text>
+        return Math.max(0, estimatedTotal - actualSmoked);
+    };
+
+    if (isLoading && !refreshing) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity
+                        style={{ position: "absolute", left: 0, paddingVertical: 10 }}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <Ionicons name="arrow-back" size={24} color={COLOR.primary} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerText}>Challenge Results</Text>
                 </View>
-                {participant.name === "You" && (
-                  <Ionicons
-                    name="person-circle"
-                    size={24}
-                    color={COLOR.primary}
-                  />
-                )}
-              </View>
-            ))}
-          </View>
-        </View>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={COLOR.primary} />
+                    <Text style={styles.loadingText}>Loading results...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
-        <View style={{ marginVertical: 20 }}>
-          <CustomButton
-            title="Share Results"
-            style={[styles.createButton, { backgroundColor: COLOR.primary }]}
-            onPress={shareResults}
-          />
+    if (!challenge || !userStats) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.noChallengesContainer}>
+                    <Text>Challenge results not found</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
-          <CustomButton
-            title="Start Similar Challenge"
-            style={[styles.createButton, { backgroundColor: COLOR.lightblue }]}
-            onPress={startSimilarChallenge}
-          />
+    const userRank = userStats.currentRank;
+    const isWinner = userRank === 1;
+    const winner = leaderboard.find(p => p.rank === 1);
+    const winnerName = winner?.userId === user.uid ? "You" : (winner?.userName || "Winner");
+    const challengeTypeName = ChallengeService.getChallengeTypeName(challenge.challengeType);
+    const timeFrameText = ChallengeService.getTimeFrameText(challenge.timeFrameDays);
 
-          <CustomButton
-            title="Back to Challenges"
-            style={[styles.createButton, { backgroundColor: COLOR.orange }]}
-            onPress={() => navigation.navigate("ChallengesHome")}
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={{ position: "absolute", left: 0, paddingVertical: 10 }}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Ionicons name="arrow-back" size={24} color={COLOR.primary} />
+                </TouchableOpacity>
+                <Text style={styles.headerText}>Challenge Results</Text>
+            </View>
+
+            <ScrollView
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[COLOR.primary]}
+                        tintColor={COLOR.primary}
+                    />
+                }
+            >
+                {/* Congratulations Section */}
+                <View style={styles.congratsContainer}>
+                    <Ionicons
+                        name="trophy"
+                        size={80}
+                        color={isWinner ? COLOR.orange : COLOR.primary}
+                    />
+                    <Text style={styles.congratsText}>Challenge Complete!</Text>
+                    <Text style={styles.headerText}>{challenge.title}</Text>
+
+                    <View style={{ marginVertical: 20 }}>
+                        <Text
+                            style={{
+                                fontSize: 18,
+                                fontFamily: "MontserratRegular",
+                                textAlign: "center",
+                                color: COLOR.primary,
+                            }}
+                        >
+                            Winner
+                        </Text>
+                        <Text style={styles.winnerName}>
+                            {winnerName}
+                            {isWinner && " 🎉"}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Challenge Details */}
+                <View style={styles.formContainer}>
+                    <View style={styles.summarySection}>
+                        <Text style={styles.inputLabel}>Challenge Details</Text>
+                        <Text style={styles.summaryValue}>{challengeTypeName}</Text>
+                        <Text style={styles.summaryValue}>{timeFrameText}</Text>
+                        <Text style={styles.summaryValue}>
+                            {formatDate(challenge.startDate)} - {formatDate(challenge.endDate)}
+                        </Text>
+                        <Text style={styles.summaryValue}>
+                            Participants: {challenge.participantCount}
+                        </Text>
+                    </View>
+
+                    {/* User Performance */}
+                    <View style={styles.summarySection}>
+                        <Text style={styles.inputLabel}>Your Performance</Text>
+
+                        <View style={styles.statContainer}>
+                            <Text style={styles.statTitle}>Final Rank</Text>
+                            <Text style={styles.statValue}>
+                                #{userRank} out of {challenge.participantCount}
+                            </Text>
+                        </View>
+
+                        <View style={styles.statContainer}>
+                            <Text style={styles.statTitle}>
+                                {challenge.challengeType === "LEAST_SMOKED_WINS"
+                                    ? "Total Cigarettes Smoked"
+                                    : "Total Points Earned"}
+                            </Text>
+                            <Text style={styles.statValue}>
+                                {challenge.challengeType === "LEAST_SMOKED_WINS"
+                                    ? userStats.totalCigarettesSmoked || 0
+                                    : userStats.totalPoints || 0}
+                            </Text>
+                        </View>
+
+                        {challenge.challengeType === "LEAST_SMOKED_WINS" && (
+                            <View style={styles.statContainer}>
+                                <Text style={styles.statTitle}>Estimated Cigarettes Saved</Text>
+                                <Text style={styles.statValue}>{calculateCigarettesSaved()}</Text>
+                            </View>
+                        )}
+
+                        {challenge.challengeType === "DAILY_TARGET_POINTS" && userStats.personalTarget && (
+                            <View style={styles.statContainer}>
+                                <Text style={styles.statTitle}>Daily Target</Text>
+                                <Text style={styles.statValue}>{userStats.personalTarget}</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Final Leaderboard */}
+                    {leaderboard.length > 0 && (
+                        <View style={styles.leaderboard}>
+                            <Text style={styles.leaderboardTitle}>Final Leaderboard</Text>
+
+                            {leaderboard.map((participant, index) => (
+                                <View
+                                    key={participant.userId || index}
+                                    style={[
+                                        styles.participantCard,
+                                        participant.rank === 1 && {
+                                            backgroundColor: COLOR.lightBackground,
+                                            borderWidth: 2,
+                                            borderColor: COLOR.orange,
+                                        },
+                                    ]}
+                                >
+                                    <Text style={styles.rankNumber}>#{participant.rank}</Text>
+                                    <View style={styles.userInfo}>
+                                        <Text style={styles.userName}>
+                                            {participant.userId === user.uid ? "You" : (participant.userName || `User ${participant.userId.slice(-4)}`)}
+                                            {participant.rank === 1 && " 👑"}
+                                        </Text>
+                                        <Text style={styles.userStats}>
+                                            {challenge.challengeType === "LEAST_SMOKED_WINS"
+                                                ? `${participant.cigarettesSmoked || 0} cigarettes smoked`
+                                                : `${participant.points || 0} points`}
+                                        </Text>
+                                    </View>
+                                    {participant.userId === user.uid && (
+                                        <Ionicons
+                                            name="person-circle"
+                                            size={24}
+                                            color={COLOR.primary}
+                                        />
+                                    )}
+                                </View>
+                            ))}
+                        </View>
+                    )}
+                </View>
+
+                {/* Action Buttons */}
+                <View style={{ marginVertical: 20, paddingHorizontal: 16 }}>
+                    <CustomButton
+                        title="Share Results"
+                        style={[styles.createButton, { backgroundColor: COLOR.primary, marginBottom: 10 }]}
+                        onPress={shareResults}
+                    />
+
+                    <CustomButton
+                        title="Start Similar Challenge"
+                        style={[styles.createButton, { backgroundColor: COLOR.lightblue, marginBottom: 10 }]}
+                        onPress={startSimilarChallenge}
+                    />
+
+                    <CustomButton
+                        title="Back to Challenges"
+                        style={[styles.createButton, { backgroundColor: COLOR.orange }]}
+                        onPress={() => navigation.navigate("ChallengesHome")}
+                    />
+                </View>
+            </ScrollView>
+        </SafeAreaView>
+    );
 };
 
 export default ChallengeResultsScreen;

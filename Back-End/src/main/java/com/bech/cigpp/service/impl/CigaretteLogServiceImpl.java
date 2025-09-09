@@ -7,6 +7,7 @@ import com.bech.cigpp.model.device.Device;
 import com.bech.cigpp.model.log.CigaretteLog;
 import com.bech.cigpp.repository.CigaretteLogRepository;
 import com.bech.cigpp.repository.DeviceRepository;
+import com.bech.cigpp.service.api.ChallengeProgressService;
 import com.bech.cigpp.service.api.CigaretteLogService;
 import com.bech.cigpp.util.CigaretteLogMapper;
 import org.springframework.stereotype.Service;
@@ -22,10 +23,14 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
 
     private final CigaretteLogRepository cigaretteLogRepository;
     private final DeviceRepository deviceRepository;
+    private final ChallengeProgressService challengeProgressService;
 
-    public CigaretteLogServiceImpl(CigaretteLogRepository cigaretteLogRepository, DeviceRepository deviceRepository) {
+    public CigaretteLogServiceImpl(CigaretteLogRepository cigaretteLogRepository, 
+                                   DeviceRepository deviceRepository,
+                                   ChallengeProgressService challengeProgressService) {
         this.cigaretteLogRepository = cigaretteLogRepository;
         this.deviceRepository = deviceRepository;
+        this.challengeProgressService = challengeProgressService;
     }
 
     @Override
@@ -52,6 +57,18 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
         if (savedCigaretteLog == null) {
             throw new RuntimeException("Failed to save cigarette log");
         }
+        
+        // Update challenge progress asynchronously
+        String userId = savedCigaretteLog.getUserId();
+        LocalDate logDate = savedCigaretteLog.getTimestamp().atZone(ZoneId.systemDefault()).toLocalDate();
+        try {
+            challengeProgressService.updateChallengeProgressOnCigaretteLog(userId, logDate);
+        } catch (Exception e) {
+            // Log error but don't fail the cigarette log creation
+            // In a production environment, you might want to use async processing or retry mechanism
+            System.err.println("Failed to update challenge progress for user " + userId + " on date " + logDate + ": " + e.getMessage());
+        }
+        
         return CigaretteLogMapper.toResponseDto(savedCigaretteLog);
     }
 
@@ -91,7 +108,21 @@ public class CigaretteLogServiceImpl implements CigaretteLogService {
     public CigaretteLogResponseDto deleteCigaretteLog(Long id) {
         CigaretteLog cigaretteLog = cigaretteLogRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cigarette log not found with id: " + id));
+        
+        // Store info before deletion for challenge progress update
+        String userId = cigaretteLog.getUserId();
+        LocalDate logDate = cigaretteLog.getTimestamp().atZone(ZoneId.systemDefault()).toLocalDate();
+        
         cigaretteLogRepository.delete(cigaretteLog);
+        
+        // Update challenge progress after deletion
+        try {
+            challengeProgressService.updateChallengeProgressOnCigaretteDelete(userId, logDate);
+        } catch (Exception e) {
+            // Log error but don't fail the deletion
+            System.err.println("Failed to update challenge progress after deletion for user " + userId + " on date " + logDate + ": " + e.getMessage());
+        }
+        
         return CigaretteLogMapper.toResponseDto(cigaretteLog);
     }
 }

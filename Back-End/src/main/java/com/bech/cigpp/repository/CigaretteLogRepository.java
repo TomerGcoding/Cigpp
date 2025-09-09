@@ -12,4 +12,10 @@ public interface CigaretteLogRepository extends JpaRepository<CigaretteLog, Long
     List<CigaretteLog> findByUserId(String userId);
     List<CigaretteLog> findByTimestampBetween(Instant startDate, Instant endDate);
     List<CigaretteLog> findByUserIdAndTimestampBetween(String userId, Instant startDate, Instant endDate);
+
+    List<CigaretteLog> findByUserIdOrderByTimestampDesc(String userId);
+
+    long countByUserIdAndTimestampBetween(String userId, Instant startOfDay, Instant endOfDay);
+
+    int countByUserId(String userId);
 }

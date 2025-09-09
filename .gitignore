@@ -1,0 +1,23 @@
+# IDE Settings (IntelliJ IDEA)
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.claude/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+
+# Project specific
+CLAUDE.md
+
+# Each subdirectory has its own .gitignore for specific tech stacks:
+# - Back-End/.gitignore handles Java/Maven/Spring Boot
+# - Front-End/.gitignore handles React Native/Expo/Node.js
