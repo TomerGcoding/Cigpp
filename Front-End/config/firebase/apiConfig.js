@@ -1,1 +1,1 @@
-export const API_BASE_URL = "http://10.100.102.9:8080/api";
+export const API_BASE_URL = "https://cigpp-backend-latest.onrender.com/api";
